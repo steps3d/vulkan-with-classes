@@ -119,11 +119,9 @@ public:
 		vkResetFences ( device->getDevice (), 1, &fence );
 	}
 
-		// VK_SUCCESS - signaled
-		// VK_NOT_READY unsignaled
-	VkResult	status () const
+	bool	isSignaled () const
 	{
-		return vkGetFenceStatus ( device->getDevice (), fence );
+		return vkGetFenceStatus ( device->getDevice (), fence ) == VK_SUCCESS;
 	}
 
 		// wait for fence, timeout in nanoseconds

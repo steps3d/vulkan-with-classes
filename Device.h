@@ -92,8 +92,9 @@ public:
 
 	bool	isOk () const
 	{
-		return  instance != VK_NULL_HANDLE && physicalDevice != VK_NULL_HANDLE && device != VK_NULL_HANDLE && 
-			graphicsQueue != VK_NULL_HANDLE && presentQueue != VK_NULL_HANDLE && commandPool != VK_NULL_HANDLE;
+		return  instance != VK_NULL_HANDLE && physicalDevice != VK_NULL_HANDLE && 
+			    device != VK_NULL_HANDLE && graphicsQueue != VK_NULL_HANDLE && 
+			    presentQueue != VK_NULL_HANDLE && commandPool != VK_NULL_HANDLE;
 	}
 
 	VkDevice	getDevice () const

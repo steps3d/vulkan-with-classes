@@ -1,14 +1,6 @@
 #pragma once
 
-#ifdef _WIN32
-#include	<Windows.h>
-#endif
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include	"Device.h"
-#include	"Log.h"
 #include	"SingleTimeCommand.h"
 
 class GpuMemory
@@ -134,9 +126,9 @@ class Buffer
 protected:
 	VkBuffer	buffer  = VK_NULL_HANDLE;
 	int			mapping = 0;
+	Device    * device  = nullptr;
 
 #ifdef USE_VMA
-	Device		  * device     = nullptr;
 	VmaAllocation	allocation = VK_NULL_HANDLE;
 #else
 	GpuMemory	memory;
@@ -156,13 +148,15 @@ public:
 		std::swap ( allocation, b.allocation  );
 		std::swap ( buffer, b.buffer );
 		std::swap ( mapping, b.mapping );
+		std::swap ( device,  b.device );
 }
 #else
 	Buffer ( Buffer&& b ) : memory ( std::move ( b.memory ) )
 	{
 		std::swap ( buffer, b.buffer );
 		std::swap ( mapping, b.mapping );
-	}
+		std::swap ( device,  b.device );
+}
 #endif // USE_VMA
 
 	Buffer ( const Buffer& ) = delete;
@@ -187,13 +181,9 @@ public:
 #endif // USE_VMA
 	}
 
-	VkDevice	getDevice () const
+	Device * getDevice () const
 	{
-#ifdef USE_VMA
-		return device->getDevice ();
-#else
-		return memory.getDevice ();
-#endif // USE_VMA
+		return device;
 	}
 
 #ifndef USE_VMA
@@ -233,11 +223,11 @@ public:
 		bufferInfo.size        = size;
 		bufferInfo.usage       = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		device                 = &dev;
 
 #ifdef USE_VMA
 		VmaAllocationCreateInfo	allocInfo = {};
 
-		device          = &dev;
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
 		if ( mappable & hostRead )
