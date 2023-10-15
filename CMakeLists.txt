@@ -96,3 +96,6 @@ endif ()
 add_executable ( example-1 example-1.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp )
 target_link_libraries ( example-1 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
 
+add_executable ( example-3 example-3.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp )
+target_link_libraries ( example-3 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
+
