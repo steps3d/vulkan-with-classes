@@ -7,10 +7,8 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 #include <cstdint>
-//#include <array>
 
 #include	"Device.h"
-//#include	"Log.h"
 #include	"SwapChain.h"
 #include	"Pipeline.h"
 #include	"Texture.h"
@@ -23,97 +21,119 @@ class Controller;
 
 struct	DevicePolicy
 {
-	DevicePolicy () = default;
+	VkPhysicalDeviceFeatures2					features                    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+	std::vector<const char*>					validationLayers            = { "VK_LAYER_KHRONOS_validation" };
+	std::vector<const char*>					deviceExtensions            = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	VkPhysicalDeviceProperties2			      * extraProperties             = nullptr;
+	VkPhysicalDeviceBufferDeviceAddressFeatures	bufferDeviceAddressFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
+	VkPhysicalDeviceVulkan13Features			features13                  = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+
+	DevicePolicy ()
+	{
+		bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+		features13.dynamicRendering                     = VK_TRUE;
+		features13.synchronization2                     = VK_TRUE;
+
+		addFeatures ( &bufferDeviceAddressFeatures );
+		addFeatures ( &features13 );
+	}
+
 	virtual ~DevicePolicy () = default;
+
+	void	addDeviceExtension ( const char * extName )
+	{
+		deviceExtensions.push_back ( extName );
+	}
+
+	void	addValidationLayer ( const char * layerName )
+	{
+		validationLayers.push_back ( layerName );
+	}
+
+		// add new feature to the features.pNext list
+	void	addFeatures ( void * pFeatures )
+	{
+		static_cast<VkPhysicalDeviceFeatures2 *>(pFeatures)->pNext = features.pNext;
+
+		features.pNext = pFeatures;
+	}
+
+		// add property to the list of properties
+	void	addProperties ( void * pProperties )
+	{
+		if ( extraProperties != nullptr )
+			static_cast<VkPhysicalDeviceProperties2 *>(pProperties)->pNext = extraProperties -> pNext;
+
+		extraProperties = static_cast<VkPhysicalDeviceProperties2 *>( pProperties );
+	}
+	
+	bool supportsPresentation ( VkInstance instance, VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex ) const
+	{
+		return  glfwGetPhysicalDevicePresentationSupport ( instance, physicalDevice, queueFamilyIndex ) == GLFW_TRUE;
+	}
 
 		// pick appropriate physical device
 	virtual VkPhysicalDevice	pickDevice ( VkInstance instance, std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface ) const
 	{
-		for ( const auto& dev : devices )				// check every device
-			if ( isDeviceSuitable ( dev, surface ) )	// use surface and checks for queue families
-				return dev;
+		VkPhysicalDevice			preferred = VK_NULL_HANDLE;
+		VkPhysicalDevice			fallback  = VK_NULL_HANDLE;
+		VkPhysicalDeviceProperties	props;
+
+		for ( const auto& dev : devices )								// check every device
+		{
+			vkGetPhysicalDeviceProperties ( dev, &props );				// get device properties
+
+			if ( isDeviceSuitable ( instance, dev, surface, props ) )	// use surface and checks for queue families
+			{
+				if ( !preferred && props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU )
+					preferred = dev;
+
+				if ( !fallback )
+					fallback = dev;
+			}
+		}
+
+		VkPhysicalDevice	device = preferred ? preferred : fallback;
+
+		if ( device )
+		{
+			vkGetPhysicalDeviceProperties ( device, &props );				// get device properties
+
+			log () << "GPU " <<  props.deviceName << std::endl;
+
+			return device;
+		}
 
 		return VK_NULL_HANDLE;
 	}
 
 		// check whether this device is ok
-	virtual bool	isDeviceSuitable ( VkPhysicalDevice device, VkSurfaceKHR surface ) const
+	virtual bool	isDeviceSuitable ( VkInstance instance, VkPhysicalDevice device, VkSurfaceKHR surface, VkPhysicalDeviceProperties& props ) const
 	{
-		QueueFamilyIndices indices = QueueFamilyIndices::findQueueFamilies ( device, surface );
+		QueueFamilyIndices			indices             = QueueFamilyIndices::findQueueFamilies ( device, surface );
+		uint32_t					graphicsFamilyIndex = indices.graphicsFamily;
+
+		if ( props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU )
+			return false;
+
+		if ( graphicsFamilyIndex == VK_QUEUE_FAMILY_IGNORED )
+			return false;
+
+		if ( !supportsPresentation ( instance, device, graphicsFamilyIndex ) )
+			return false;
+
+		if ( props.apiVersion < VK_API_VERSION_1_1 )
+			return false;
 
 		return indices.isComplete ();
 	}
 
-	virtual std::vector<const char*> validationLayers () const
+		// create device, picking required features
+	virtual	void	createDevice ( VkInstance instance, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Device& device )
 	{
-		return { "VK_LAYER_KHRONOS_validation" };
-	};
-
-	virtual std::vector<const char*> instanceExtensions () const
-	{
-		return {};
-	};
-
-	virtual std::vector<const char*> deviceExtensions () const
-	{
-		return { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	};
-};
-
-/*
-struct	DeviceRatingStrategy
-{
-	static VkPhysicalDevice	pickDevice ( VkInstance instance, std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface )
-	{
-		VkPhysicalDevice			bestDevice = VK_NULL_HANDLE;
-		float						bestScore  = 0;
-		VkPhysicalDeviceProperties	deviceProperties;
-		VkPhysicalDeviceFeatures	deviceFeatures;
-
-		for ( const auto& dev : devices )
-		{
-			if ( isDeviceSuitable ( dev, surface ) )			// use surface and checks for queue families
-				continue;
-
-			float	score = 0;
-
-			vkGetPhysicalDeviceProperties ( dev, &deviceProperties );		
-			vkGetPhysicalDeviceFeatures   ( dev, &deviceFeatures   );
-
-			if ( deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU )
-				score += 10;
-
-			if ( deviceFeatures.tessellationShader )
-				score += 5;
-
-			if ( score > bestScore )
-			{
-				bestScore  = score;
-				bestDevice = dev;
-			}
-		}
-
-		return bestDevice;
+		device.create ( instance, physicalDevice, surface, deviceExtensions, validationLayers, &features, extraProperties );
 	}
-
-	static bool	isDeviceSuitable ( VkPhysicalDevice device, VkSurfaceKHR surface )
-	{
-		QueueFamilyIndices indices = QueueFamilyIndices::findQueueFamilies ( device, surface );
-
-		return indices.isComplete ();
-	}
-
-	static std::vector<const char*> validationLayers ()
-	{
-		return { "VK_LAYER_KHRONOS_validation" };
-	};
-
-	static std::vector<const char*> deviceExtensions ()
-	{
-		return { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	};
 };
-*/
 
 class	VulkanWindow
 {
@@ -166,7 +186,6 @@ public:
 		descAllocator.clean ();
 		depthTexture.clean  ();
 		clean ();
-		delete policy;
 	}
 
 	void	setCaption ( const std::string& t )

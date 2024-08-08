@@ -28,6 +28,11 @@ public:
         };
     };
 
+	void setFlags ( VkDescriptorPoolCreateFlags f )
+	{
+		flags = f;
+	}
+
 	void create ( Device& newDevice );	// start allocator
 	void reset ();                      // reset all pools and move them to freePools
 	void clean ();                      // destroy allocator
@@ -49,6 +54,7 @@ private:
 	PoolSizes                       descriptorSizes;
 	std::vector<VkDescriptorPool>	usedPools;        // active pools with allocated items
 	std::vector<VkDescriptorPool>	freePools;  
+	VkDescriptorPoolCreateFlags		flags = 0;
 };
 
 class	DescriptorSet
@@ -184,7 +190,6 @@ public:
 
 		writes.push_back ( descriptorWrites );
 
-		return *this;
 		return *this;
 	}
 

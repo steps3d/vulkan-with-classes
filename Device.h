@@ -20,6 +20,12 @@
 #define DEFAULT_FENCE_TIMEOUT 100000000000
 #define	GLM_FORCE_DEPTH_ZERO_TO_ONE
 
+template <typename T>
+inline T alignedSize ( T value, T alignment )
+{
+	return (value + alignment - 1) & ~(alignment - 1);
+}
+
 class	CommandBuffer;
 
 struct QueueFamilyIndices		// class to hold indices to queue families
@@ -48,14 +54,15 @@ class	Device
 	VkDebugReportCallbackEXT 			msgCallback         = VK_NULL_HANDLE;
 	VkPhysicalDevice					physicalDevice      = VK_NULL_HANDLE;
 	VkDevice							device              = VK_NULL_HANDLE;
-	VkPhysicalDeviceProperties			properties;
-	VkPhysicalDeviceFeatures			features;
-	VkPhysicalDeviceMemoryProperties	memoryProperties;
+	VkPhysicalDeviceProperties2			properties          = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+	VkPhysicalDeviceFeatures2			features            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2   };
+	VkPhysicalDeviceMemoryProperties	memoryProperties    = {};
 	VkQueue								graphicsQueue       = VK_NULL_HANDLE;
 	VkQueue								presentQueue        = VK_NULL_HANDLE;
 	VkQueue								computeQueue        = VK_NULL_HANDLE;
 	VkCommandPool						commandPool         = VK_NULL_HANDLE;
 	QueueFamilyIndices					families;
+	std::vector<VkExtensionProperties>	extensions;
 
 #ifdef USE_VMA
 	VmaAllocator						allocator           = VK_NULL_HANDLE;
@@ -152,12 +159,12 @@ public:
 		return families;
 	}
 
-	const VkPhysicalDeviceProperties&	getProperties () const
+	const VkPhysicalDeviceProperties2&	getProperties () const
 	{
 		return properties;
 	}
 
-	const VkPhysicalDeviceFeatures&	getFeatures () const
+	const VkPhysicalDeviceFeatures2&	getFeatures () const
 	{
 		return features;
 	}
@@ -175,9 +182,10 @@ public:
 #endif // USE_VMA
 
 		// create logical device, get queues, create command pool
+		// pNext is used in VkDeviceCreateInfo 
 	bool	create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, 
 					 VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions, 
-					 const std::vector<const char*>& validationLayers );
+					 const std::vector<const char*>& validationLayers, void * pNextFeatures = nullptr, void * pNextProperties = nullptr );
 
 	void	clean ()
 	{

@@ -55,7 +55,7 @@ VkDescriptorPool DescriptorAllocator::pickPool ()
     }
     else
             // no pools available, so create a new one
-        return createPool ( device, descriptorSizes, 1000, 0 );
+        return createPool ( device, descriptorSizes, 1000, flags );
 }
 
 VkDescriptorSet	DescriptorAllocator::alloc ( VkDescriptorSetLayout layout )

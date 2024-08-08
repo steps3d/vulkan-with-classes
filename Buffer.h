@@ -1,5 +1,6 @@
 #pragma once
 
+#include	<cstring>
 #include	"Device.h"
 #include	"SingleTimeCommand.h"
 
@@ -61,15 +62,21 @@ public:
 		memory = VK_NULL_HANDLE;
 	}
 
-	bool	alloc ( Device& _device, VkMemoryRequirements memRequirements, VkMemoryPropertyFlags properties )
+	bool	alloc ( Device& _device, VkMemoryRequirements memRequirements, VkMemoryPropertyFlags properties, bool addressable = false )
 	{
-		VkMemoryAllocateInfo allocInfo = {};
+		VkMemoryAllocateInfo		allocInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+		VkMemoryAllocateFlagsInfo	flagsInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO };
 		
 		device                    = &_device;
 		size                      = memRequirements.size;
-		allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize  = size;
 		allocInfo.memoryTypeIndex = findMemoryType ( memRequirements.memoryTypeBits, properties );
+
+		if ( addressable )		// if VK_KHR_buffer_device_address requested
+		{
+			flagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+			allocInfo.pNext = &flagsInfo;
+		}
 
 		return vkAllocateMemory ( device->getDevice (), &allocInfo, nullptr, &memory ) == VK_SUCCESS;
 	}
@@ -107,7 +114,7 @@ public:
 		void * data;
 
 		if ( !memory )
-			return false;
+			return nullptr;
 
 		if ( vkMapMemory ( device->getDevice (), memory, 0, size, 0, &data ) != VK_SUCCESS )
 			return nullptr;
@@ -124,9 +131,10 @@ public:
 class Buffer
 {
 protected:
-	VkBuffer	buffer  = VK_NULL_HANDLE;
-	int			mapping = 0;
-	Device    * device  = nullptr;
+	VkBuffer		buffer  = VK_NULL_HANDLE;
+	int				mapping = 0;
+	Device	      * device  = nullptr;
+	VkDeviceSize	size    = 0l;
 
 #ifdef USE_VMA
 	VmaAllocation	allocation = VK_NULL_HANDLE;
@@ -146,14 +154,14 @@ public:
 	Buffer ( Buffer&& b )
 	{
 		std::swap ( allocation, b.allocation  );
-		std::swap ( buffer, b.buffer );
-		std::swap ( mapping, b.mapping );
-		std::swap ( device,  b.device );
+		std::swap ( buffer,     b.buffer );
+		std::swap ( mapping,    b.mapping );
+		std::swap ( device,     b.device );
 }
 #else
 	Buffer ( Buffer&& b ) : memory ( std::move ( b.memory ) )
 	{
-		std::swap ( buffer, b.buffer );
+		std::swap ( buffer,  b.buffer );
 		std::swap ( mapping, b.mapping );
 		std::swap ( device,  b.device );
 }
@@ -198,6 +206,11 @@ public:
 		return buffer;
 	}
 	
+	VkDeviceSize getSize () const
+	{
+		return size;
+	}
+
 	void	clean ()
 	{
 #ifdef USE_VMA
@@ -215,15 +228,15 @@ public:
 		buffer = VK_NULL_HANDLE;
 	}
 
-	bool	create ( Device& dev, VkDeviceSize size, VkBufferUsageFlags usage, int mappable )	//VkMemoryPropertyFlags properties )
+	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable )
 	{
-		VkBufferCreateInfo		bufferInfo = {};
+		VkBufferCreateInfo		bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 
-		bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size        = size;
-		bufferInfo.usage       = usage;
+		bufferInfo.size        = sz;
+		bufferInfo.usage       = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		device                 = &dev;
+		size                   = sz;
 
 #ifdef USE_VMA
 		VmaAllocationCreateInfo	allocInfo = {};
@@ -306,6 +319,15 @@ public:
 
 		vkCmdCopyBuffer ( cmd.getHandle (), fromBuffer.getHandle (), getHandle (), 1, &copyRegion );
 	}
+
+	uint64_t	getDeviceAddress () const
+	{
+		VkBufferDeviceAddressInfo addressInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+
+		addressInfo.buffer = buffer;
+
+		return vkGetBufferDeviceAddress ( device->getDevice (), &addressInfo );
+	}
 };
 
 class	PersistentBuffer : public Buffer
@@ -337,9 +359,9 @@ public:
 		ptr = nullptr;
 	}
 
-	bool	create ( Device& dev, VkDeviceSize size, VkBufferUsageFlags usage, int mappable )
+	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable )
 	{
-		if ( !Buffer::create ( dev, size, usage, mappable ) )
+		if ( !Buffer::create ( dev, sz, usage, mappable ) )
 			return false;
 
 #ifdef USE_VMA
@@ -373,7 +395,7 @@ public:
 		return (T *) PersistentBuffer::getPtr ();
 	}
 
-	bool	create ( Device& device, VkBufferUsageFlags usage, int n = 1, int al = 1 )
+	bool	create ( Device& device, VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, int n = 1, int al = 1 )
 	{
 		align    = al;
 		count    = n;

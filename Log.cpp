@@ -13,21 +13,20 @@
 #endif
 
 static	Log	appLog ( "" );		// create application log
+static	Log	debLog ( "", true );	// create debug log
 Log::endl__	Log::endl;			// creat end-of-line marker
 
 Log& Log::flush ()
 {
+	if ( skip )
+		return *this;
+
 	std::string	temp = s.str ();	// get string from stream
 		
 	s.str ( std::string () );		// clear stream
 	
-//	temp += '\n';
-	
 	puts ( temp.c_str () );
 	
-#ifdef	_WIN32
-	OutputDebugString ( temp.c_str () );
-#endif
 	if ( !logName.empty () )
 	{
 		std::ofstream file;
@@ -36,6 +35,10 @@ Log& Log::flush ()
 		file << temp << std::endl;
 	}
 		
+#ifdef	_WIN32
+	OutputDebugString ( temp.c_str () );
+	OutputDebugString ( "\n" );
+#endif
 	return *this;
 }
 
@@ -47,4 +50,9 @@ Log& log ( int level )
 Log& fatal ()
 {
 	return appLog << Log::fatal__ ();
+}
+
+Log&	debug ()
+{
+	return debLog;
 }

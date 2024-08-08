@@ -13,12 +13,12 @@
 bool	isDepthFormat   ( VkFormat format );
 bool	isStencilFormat ( VkFormat );
 
-class	ImageCreateInfo
+class	ImageParams
 {
 	VkImageCreateInfo imageInfo = {};
 	
 public:
-	ImageCreateInfo ( uint32_t width, uint32_t height, uint32_t depth = 1 )
+	ImageParams ( uint32_t width, uint32_t height, uint32_t depth = 1 )
 	{
 		imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
@@ -38,43 +38,43 @@ public:
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
 	}
 	
-	ImageCreateInfo&	setFormat ( VkFormat format )
+	ImageParams&	setFormat ( VkFormat format )
 	{
 		imageInfo.format = format;
 		return *this;
 	}
 
-	ImageCreateInfo&	setTiling ( VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL )
+	ImageParams&	setTiling ( VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL )
 	{
 		imageInfo.tiling = tiling;
 		return *this;
 	}
 	
-	ImageCreateInfo&	setMipLevels ( uint32_t mipLevels )
+	ImageParams&	setMipLevels ( uint32_t mipLevels )
 	{
 		imageInfo.mipLevels = mipLevels;
 		return *this;
 	}
 		
-	ImageCreateInfo&	setLayers ( uint32_t layers )
+	ImageParams&	setLayers ( uint32_t layers )
 	{
 		imageInfo.arrayLayers = layers;
 		return *this;
 	}
 	
-	ImageCreateInfo&	setInitialLayout ( VkImageLayout layout )
+	ImageParams&	setInitialLayout ( VkImageLayout layout )
 	{
 		imageInfo.initialLayout = layout;
 		return *this;
 	}
 
-	ImageCreateInfo&	setUsage ( VkImageUsageFlags flags )
+	ImageParams&	setUsage ( VkImageUsageFlags flags )
 	{
 		imageInfo.usage = flags;
 		return *this;
 	}
 	
-	ImageCreateInfo&	setFlags ( VkImageCreateFlags flags )
+	ImageParams&	setFlags ( VkImageCreateFlags flags )
 	{
 		imageInfo.flags = flags;
 		return *this;
@@ -194,6 +194,11 @@ public:
 		return mipLevels;
 	}
 	
+	uint32_t	getArrayLayers () const
+	{
+		return arrayLayers;
+	}
+
 	VkImage	getHandle () const
 	{
 		return image;
@@ -202,15 +207,6 @@ public:
 	Device * getDevice () const
 	{
 		return device;
-	}
-
-	VkPhysicalDevice	getPhysicalDevice () const
-	{
-#ifdef USE_VMA
-		return device->getPhysicalDevice ();
-#else
-		return memory.getPhysicalDevice ();
-#endif // USE_VMA
 	}
 
 	VkFormat	getFormat () const
@@ -266,7 +262,8 @@ public:
 	bool	create ( Device& dev, uint32_t w, uint32_t h, uint32_t d, uint32_t numMipLevels, VkFormat fmt, VkImageTiling tl, 
 					 VkImageUsageFlags usage, int mapping, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 
-	bool	create           ( Device& dev, ImageCreateInfo& info, int mapping );
+	bool	create           ( Device& dev, ImageParams& info, int mapping );
+		// NB: propably should support also CommanBuffer
 	void	transitionLayout ( SingleTimeCommand& cmd, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout );
 	void	copyFromBuffer   ( SingleTimeCommand& cmd, Buffer& buffer, uint32_t width, uint32_t height, uint32_t depth = 1, uint32_t layers = 1, uint32_t mipLevel = 0 );
 	void	saveAs           ( const std::string& fileName );
@@ -468,7 +465,9 @@ public:
 
 	Texture&	create ( Device& dev, uint32_t w, uint32_t h, uint32_t d, uint32_t mipLevels, VkFormat fmt, VkImageTiling tl, 
 						 VkImageUsageFlags usage, int mapping, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-	
+
+	Texture&	create ( Device& dev, ImageParams& info, int mapping, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
+
 	void	generateMipmaps ( SingleTimeCommand& cmd, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels );
 	bool	load            ( Device& dev, const std::string& fileName, bool mipmaps = true, bool srgb = false );
 	bool	loadCubemap     ( Device& dev, const std::vector<const char *>& files, bool mipmaps = true, bool srgb = false );

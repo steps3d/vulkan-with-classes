@@ -4,17 +4,6 @@
 #include	"Controller.h"
 #include	"stb_image_write.h"
 
-/*const std::vector<const char*> validationLayers = 
-{
-    "VK_LAYER_KHRONOS_validation",
-};
-
-const std::vector<const char*> deviceExtensions = 
-{
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-*/
-
 const bool enableValidationLayers = true;
 
 	// GLFW callbacks
@@ -99,7 +88,7 @@ void	VulkanWindow::initVulkan ( DevicePolicy * p )
 	if ( glfwCreateWindowSurface ( instance, window, nullptr, &surface ) != VK_SUCCESS )
 		fatal () << "VulkanWindow: failed to create window surface!";
 
-	device.create ( instance, pickPhysicalDevice (), surface, policy->deviceExtensions (), policy->validationLayers () );
+	policy->createDevice ( instance, pickPhysicalDevice (), surface, device );
 
 	swapChain.create            ( device, surface, window, width, height, srgb );	
 	swapChain.createSyncObjects ();
@@ -176,29 +165,26 @@ void	VulkanWindow::createInstance ()
 
 	uint32_t 				glfwExtensionCount = 0;
 	auto					extensions         = getRequiredInstanceExtensions();
-	VkApplicationInfo		appInfo            = {};
-	VkInstanceCreateInfo	createInfo         = {};
+	VkApplicationInfo		appInfo            = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+	VkInstanceCreateInfo	createInfo         = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 
-	appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName   = appName.c_str ();
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName        = engineName.c_str ();
 	appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion         = VK_API_VERSION_1_0;
+	appInfo.apiVersion         = VK_API_VERSION_1_3;
 
-	createInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo        = &appInfo;
 	createInfo.enabledLayerCount       = 0;
 	createInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size () );
 	createInfo.ppEnabledExtensionNames = extensions.data ();
 
 	VkDebugUtilsMessengerCreateInfoEXT	debugCreateInfo;
-	auto								validationLayers = policy->validationLayers ();		// should be out of if !
+	auto								validationLayers = policy->validationLayers;		// should be out of if !
 
 	if ( enableValidationLayers ) 
 	{
 		populateDebugMessengerCreateInfo ( debugCreateInfo );
-
 
 		createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -294,10 +280,8 @@ std::vector<const char*> VulkanWindow::getRequiredInstanceExtensions () const
 	if ( enableValidationLayers )
 		extensions.push_back ( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 
-	auto exts = policy->instanceExtensions ();
-
-	for ( auto ext : exts )
-		extensions.push_back ( ext );
+	//for ( auto ext : policy->instanceExtensions )
+	//	extensions.push_back ( ext );
 
 	return extensions;
 }
@@ -312,9 +296,7 @@ std::vector<const char*> VulkanWindow::getRequiredDeviceExtensions () const
 	if ( enableValidationLayers )
 		extensions.push_back ( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 
-	auto exts = policy->deviceExtensions ();
-
-	for ( auto ext : exts )
+	for ( auto ext : policy->deviceExtensions )
 		extensions.push_back ( ext );
 
 	return extensions;
@@ -330,7 +312,7 @@ bool	VulkanWindow::checkValidationLayerSupport () const
 		
 	vkEnumerateInstanceLayerProperties ( &layerCount, availableLayers.data () );
 
-	for ( const char * layerName :policy->validationLayers () )
+	for ( const char * layerName : policy->validationLayers )
 	{
 		bool layerFound = false;
 
@@ -403,7 +385,7 @@ bool	VulkanWindow::makeScreenshot ( const std::string& fileName )
 	VkImage	srcImage = swapChain.getImages () [currentImage];		
 	Image	image;
 
-	image.create ( device, ImageCreateInfo ( getWidth (), getHeight () ).setFormat ( VK_FORMAT_R8G8B8A8_UNORM ).setTiling ( VK_IMAGE_TILING_LINEAR ).setUsage ( VK_IMAGE_USAGE_TRANSFER_DST_BIT ), 
+	image.create ( device, ImageParams ( getWidth (), getHeight () ).setFormat ( VK_FORMAT_R8G8B8A8_UNORM ).setTiling ( VK_IMAGE_TILING_LINEAR ).setUsage ( VK_IMAGE_USAGE_TRANSFER_DST_BIT ), 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 
 	{

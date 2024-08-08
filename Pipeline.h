@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include	<memory>			// for shared_ptr
 #include	"Data.h"
 #include	"Texture.h"
 
@@ -297,34 +298,55 @@ public:
 class	DescSetLayout
 {
 	std::vector<VkDescriptorSetLayoutBinding>	descr;
+	std::vector<VkDescriptorBindingFlags>		flags;
+	std::shared_ptr<bool>						shared;		// shared marker used to track shared usage
 	VkDescriptorSetLayout						descriptorSetLayout = VK_NULL_HANDLE;
 	VkDevice									device              = VK_NULL_HANDLE;
 
 public:
 	DescSetLayout () = default;
-	DescSetLayout ( const DescSetLayout& ) = delete;
+	DescSetLayout ( const DescSetLayout& dsl) : descr ( dsl.descr ), flags ( dsl.flags ), descriptorSetLayout ( dsl.descriptorSetLayout ), device ( dsl.device ) 
+	{
+		if ( descriptorSetLayout )		// share only if there is layout to share
+			shared = dsl.shared;
+	}
+
 	DescSetLayout ( DescSetLayout&& dsl )
 	{
 		std::swap ( device,              dsl.device );	
 		std::swap ( descriptorSetLayout, dsl.descriptorSetLayout );
 		std::swap ( descr,               dsl.descr );
+		std::swap ( shared,              dsl.shared );
 	}
 	
 	~DescSetLayout ()
 	{
-		clean ();
+		clean ();		// clean will check for sharing
 	}
 	
-	DescSetLayout& operator = ( const DescSetLayout& ) = delete;
+	DescSetLayout& operator = ( const DescSetLayout& dsl )
+	{
+		cleanLayout ();
+
+		descr               = dsl.descr;
+		flags               = dsl.flags;
+		device              = dsl.device;
+		descriptorSetLayout = dsl.descriptorSetLayout;
+
+		if ( dsl.descriptorSetLayout )	// realy shared layout
+			shared = dsl.shared;
+
+		return *this;
+	}
 
 	void	operator = ( DescSetLayout&& dsl )
 	{
-		assert ( descriptorSetLayout == VK_NULL_HANDLE );		// we should not have ready layout (or may be descroy it ?)
+		//assert ( descriptorSetLayout == VK_NULL_HANDLE );		// we should not have ready layout (or may be descroy it ?)
 		
-		device = dsl.device;
-		
+		std::swap ( device,              dsl.device );
 		std::swap ( descriptorSetLayout, dsl.descriptorSetLayout );
-		std::swap ( descr,               dsl.descr );
+		std::swap ( descr,               dsl.descr  );
+		std::swap ( shared,              dsl.shared );
 	}
 	
 	uint32_t	count () const
@@ -344,16 +366,16 @@ public:
 	
 	void	clean ()
 	{
-		if ( descriptorSetLayout != VK_NULL_HANDLE )
-			vkDestroyDescriptorSetLayout ( device, descriptorSetLayout, nullptr );
-
-		descriptorSetLayout = VK_NULL_HANDLE;
-
-		descr.clear ();
+		cleanLayout  ();
+		descr.clear  ();
+		shared.reset ();		// now we're not sharing with anyone
 	}
 	
 	DescSetLayout&	add ( uint32_t binding, VkDescriptorType type, VkShaderStageFlags flags, uint32_t cnt = 1 )
 	{
+		assert ( descriptorSetLayout == VK_NULL_HANDLE );		// we should not have ready layout (or may be descroy it ?)
+		assert ( cnt > 0 );
+
 		VkDescriptorSetLayoutBinding	layoutBinding = {};
 		
 		layoutBinding.binding            = binding;
@@ -367,16 +389,65 @@ public:
 		return *this;
 	}
 	
-	void	create ( VkDevice dev )
+	DescSetLayout&	addFlags ( std::initializer_list<VkDescriptorBindingFlags> flagsList )
 	{
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		
+		assert ( descriptorSetLayout == VK_NULL_HANDLE );		// we should not have ready layout (or may be descroy it ?)
+
+		for ( auto f : flagsList )
+			flags.push_back ( f );
+
+		return *this;
+	}
+
+	void	create ( VkDevice dev, VkDescriptorSetLayoutCreateFlags  layoutCreateFlags = 0 )
+	{
+			// if already have value then clean it
+		cleanLayout ();
+
+		VkDescriptorSetLayoutCreateInfo 			layoutInfo            = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+		VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlags = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+
+		if ( !flags.empty () )
+		{
+			assert ( flags.size () == descr.size () );
+
+			setLayoutBindingFlags.bindingCount  = uint32_t ( flags.size () );
+			setLayoutBindingFlags.pBindingFlags = flags.data ();
+
+			layoutInfo.pNext = &setLayoutBindingFlags;
+		}
+
+		////////////
+		for ( auto& it : descr)
+			assert(it.descriptorCount > 0);
+
+		///////////
 		layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = count ();
 		layoutInfo.pBindings    = data  ();
+		layoutInfo.flags        = layoutCreateFlags;
+		shared                  = std::make_shared<bool> ( true );
 
 		if ( vkCreateDescriptorSetLayout ( device = dev, &layoutInfo, nullptr, &descriptorSetLayout ) != VK_SUCCESS )
 			fatal () << "DescSetLayout: failed to create descriptor set layout!";
+	}
+
+protected:
+		// perform freeeing layout if not shared,
+		// dec shared count
+	void	cleanLayout ()
+	{
+			// if already have value then clean it
+		if ( descriptorSetLayout != VK_NULL_HANDLE )
+		{
+				// if not shared now
+			if ( shared.use_count () == 1 )
+				vkDestroyDescriptorSetLayout ( device, descriptorSetLayout, nullptr );
+
+			descriptorSetLayout = VK_NULL_HANDLE;
+		}
+
+		shared.reset ();		// one share less
 	}
 };
 
@@ -474,6 +545,9 @@ class	GraphicsPipeline
 	AttrDescription								vertexAttrs;
 	std::vector<DescSetLayout>					descLayouts;
 	std::vector<VkPushConstantRange>			pushConsts;
+	void									  * pNext = nullptr;		// additional info for creating
+
+	uint32_t									numColorBlendAttachments = 0;		// for dynamic rendering, when we don't have any valid renderpass
 
 public:
 	GraphicsPipeline () {}
@@ -850,12 +924,31 @@ public:
 		return *this;
 	}
 
-	GraphicsPipeline&	addDescLayout ( uint32_t index, DescSetLayout& dsl )
+		// for dynamic rendering we have to explcitly specify numColorBlendAttachments 
+		// because we don't have valid renderpass
+	GraphicsPipeline&	setNumColorBlendAttachments ( uint32_t num )
+	{
+		numColorBlendAttachments = num;
+
+		return *this;
+	}
+
+	GraphicsPipeline&	addDescLayout ( uint32_t index, DescSetLayout&& dsl )
 	{
 		if ( index >= descLayouts.size () )
 			descLayouts.resize ( index + 1 );
 		
 		std::swap ( descLayouts [index], dsl );			// XXX - move
+		
+		return *this;
+	}
+	
+	GraphicsPipeline&	addDescLayout ( uint32_t index, DescSetLayout& dsl )
+	{
+		if ( index >= descLayouts.size () )
+			descLayouts.resize ( index + 1 );
+		
+		descLayouts [index] = dsl;
 		
 		return *this;
 	}
@@ -867,7 +960,14 @@ public:
 		return *this;
 	}
 
-	void	create ( Renderpass& renderPass )
+	GraphicsPipeline&	addAddInfo ( void * info )
+	{
+		pNext = info;
+
+		return *this;
+
+	}
+	void	create ( Renderpass& renderPass, uint32_t flags = 0 )
 	{
 		if ( !device )
 			fatal () << "Pipeline: device is NULL" << Log::endl;
@@ -994,7 +1094,9 @@ public:
 			depthStencil.maxDepthBounds        = maxDepthBounds;
 		}
 		
-		auto											 numColorBlendAttachments = renderPass.numColorAttachments ();
+		if ( numColorBlendAttachments < 1 )
+			numColorBlendAttachments = std::max<uint32_t> ( 1, renderPass.numColorAttachments () );
+
 		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
 
 		for ( uint32_t i = 0; i < numColorBlendAttachments; i++ )
@@ -1022,7 +1124,7 @@ public:
 		colorBlending.sType                = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlending.logicOpEnable        = VK_FALSE;
 		colorBlending.logicOp              = VK_LOGIC_OP_COPY;
-		colorBlending.attachmentCount      = renderPass.numColorAttachments ();
+		colorBlending.attachmentCount      = numColorBlendAttachments;
 		colorBlending.pAttachments         = colorBlendAttachments.data ();
 		colorBlending.blendConstants[0]    = 0.0f;
 		colorBlending.blendConstants[1]    = 0.0f;
@@ -1041,7 +1143,10 @@ public:
 		{
 			for ( auto& d : descLayouts )
 			{
-				d.create          ( device->getDevice () );
+					// create descriptor if not already created
+				if ( d.getHandle () == VK_NULL_HANDLE )
+					d.create ( device->getDevice () );
+
 				layouts.push_back ( d.getHandle () );
 			}
 		
@@ -1075,6 +1180,8 @@ public:
 		pipelineInfo.renderPass          = renderPass.getHandle ();
 		pipelineInfo.subpass             = 0;
 		pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
+		pipelineInfo.flags               = flags;
+		pipelineInfo.pNext               = pNext;
 
 		if ( patchSize > 0 )
 		{
@@ -1169,7 +1276,7 @@ public:
 	}
 
 
-	ComputePipeline&	create ()
+	ComputePipeline&	create ( uint32_t flags = 0 )
 	{
 		if ( !device )
 			fatal () << "Pipeline: device is NULL" << Log::endl;
@@ -1208,6 +1315,7 @@ public:
 		pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		pipelineInfo.stage  = stageInfo;
 		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.flags  = flags;
 		
 		if ( vkCreateComputePipelines ( device->getDevice (), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline ) != VK_SUCCESS )
 			fatal () << "Pipeline: failed to create compute pipeline!" << std::endl;

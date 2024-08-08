@@ -98,7 +98,7 @@ public:
 	}
 };
 
-int main ( int argc, char * argv )
+int main ( int argc, char * argv [] )
 {
 	return ExampleWindow ( 800, 600, "Vulkan example" ).run ();
 }

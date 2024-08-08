@@ -1,0 +1,19 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+layout( local_size_x = 1024 ) in;
+
+layout(std430, binding = 0) buffer In 
+{
+	float values [];
+};
+
+void main() 
+{
+	uint idx = gl_GlobalInvocationID.x;
+	
+	if ( idx >= 1024 )
+		return;
+	
+	values [idx] ++;		
+}

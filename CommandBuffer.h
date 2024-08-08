@@ -198,10 +198,11 @@ public:
 
 class	CommandBuffer
 {
-	Device                * device       = nullptr;
-	VkCommandBuffer			buffer       = VK_NULL_HANDLE;
-	VkPipelineBindPoint		bindingPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	VkPipelineLayout		layout       = VK_NULL_HANDLE;
+	Device                * device        = nullptr;
+	VkCommandBuffer			buffer        = VK_NULL_HANDLE;
+	VkPipelineBindPoint		bindingPoint  = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	VkPipelineLayout		layout        = VK_NULL_HANDLE;
+	bool					hasRenderPass = false;
 
 public:
 	CommandBuffer () = default;
@@ -232,45 +233,9 @@ public:
 		return buffer;
 	}
 
-	void	create ( Device& dev )
-	{
-		device = &dev;
-
-		VkCommandBufferAllocateInfo		allocInfo = {};
-
-		allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool        = device->getCommandPool ();
-		allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = 1;
-
-		if ( vkAllocateCommandBuffers ( device->getDevice (), &allocInfo, &buffer ) != VK_SUCCESS )
-			fatal () << "VulkanWindow: failed to allocate command buffers!";
-	}
-
-	CommandBuffer&	begin ( bool simultenous = false )
-	{
-		VkCommandBufferBeginInfo beginInfo = {};
-
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-		if ( simultenous )
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-		if ( vkBeginCommandBuffer ( buffer, &beginInfo ) != VK_SUCCESS )
-			fatal () << "VulkanWindow: failed to begin recording command buffer!";
-
-		return *this;
-	}
-
-	CommandBuffer&	end ()
-	{
-		vkCmdEndRenderPass ( buffer );
-
-		if ( vkEndCommandBuffer ( buffer ) != VK_SUCCESS )
-			fatal () << "VulkanWindow: failed to record command buffer!";
-
-		return *this;
-	}
+	CommandBuffer&	create ( Device& dev );
+	CommandBuffer&	begin ( bool simultenous = false );
+	CommandBuffer&	end ();
 
 	CommandBuffer&	pipeline ( GraphicsPipeline& p )
 	{
@@ -323,6 +288,8 @@ public:
 
 	CommandBuffer&	beginRenderPass ( RenderPassInfo& pass, bool contentInline = true )
 	{
+		hasRenderPass = true;
+
 		vkCmdBeginRenderPass  ( buffer, &pass.getInfo (), contentInline ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS );
 
 		return *this;
@@ -431,6 +398,8 @@ public:
 	CommandBuffer&	barrier ( Barrier& b )
 	{
 		vkCmdPipelineBarrier ( buffer, b.srcStageMask (), b.dstStageMask (), b.dependencyFlags (), (uint32_t)b.memoryBarriers.size (), b.memoryBarriers.data (), 0, nullptr, (uint32_t)b.imageMemoryBarriers.size (), b.imageMemoryBarriers.data () );
+		
+		return *this;
 	}
 };
 
@@ -494,17 +463,23 @@ public:
 		return *this;
 	}
 
-	bool	submit ( VkQueue queue, VkFence fence = VK_NULL_HANDLE )
-	{
-		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.waitSemaphoreCount   = (uint32_t) waitSemaphores.size ();
-		submitInfo.pWaitSemaphores      = waitSemaphores.data ();
-		submitInfo.pWaitDstStageMask    = stageFlags.data ();
-		submitInfo.commandBufferCount   = (uint32_t) commandBuffers.size ();
-		submitInfo.pCommandBuffers      = commandBuffers.data ();
-		submitInfo.signalSemaphoreCount = (uint32_t) signalSemaphores.size ();
-		submitInfo.pSignalSemaphores    = signalSemaphores.data ();
-
-		return vkQueueSubmit ( queue, 1, &submitInfo, fence ) == VK_SUCCESS;
-	}
+	bool	submit ( VkQueue queue, VkFence fence = VK_NULL_HANDLE );
 };
+
+VkImageMemoryBarrier2  imageBarrier  ( VkImage image, VkPipelineStageFlags2 srcStageMask, VkAccessFlags2 srcAccessMask, VkImageLayout oldLayout, VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 dstAccessMask, VkImageLayout newLayout, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0, uint32_t levelCount = VK_REMAINING_MIP_LEVELS );
+VkBufferMemoryBarrier2 bufferBarrier ( VkBuffer buffer, VkPipelineStageFlags2 srcStageMask, VkAccessFlags2 srcAccessMask, VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 dstAccessMask );
+
+inline VkImageMemoryBarrier2  imageBarrier  ( Image& image, VkPipelineStageFlags2 srcStageMask, VkAccessFlags2 srcAccessMask, VkImageLayout oldLayout, VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 dstAccessMask, VkImageLayout newLayout, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0, uint32_t levelCount = VK_REMAINING_MIP_LEVELS )
+{
+	return imageBarrier  ( image.getHandle (), srcStageMask, srcAccessMask, oldLayout, dstStageMask, dstAccessMask, newLayout, aspectMask, baseMipLevel, levelCount );
+}
+
+inline VkBufferMemoryBarrier2 bufferBarrier ( Buffer& buffer, VkPipelineStageFlags2 srcStageMask, VkAccessFlags2 srcAccessMask, VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 dstAccessMask )
+{
+	return bufferBarrier ( buffer.getHandle (), srcStageMask, srcAccessMask, dstStageMask, dstAccessMask );
+}
+
+void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkBufferMemoryBarrier2> bufBerriers, VkDependencyFlags dependencyFlags = 0 );
+void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkImageMemoryBarrier2> imgBarriers, VkDependencyFlags dependencyFlags = 0);
+void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkBufferMemoryBarrier2> bufBerriers, std::initializer_list<VkBufferMemoryBarrier2>& imgBarriers, VkDependencyFlags dependencyFlags = 0 );
+

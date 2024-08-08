@@ -35,7 +35,7 @@ class	SwapChain
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
 public:
-	SwapChain  () = default;
+	SwapChain  ( bool _vsync = true ) : vSync ( _vsync ) {}
 	~SwapChain () = default;
 
 	VkFormat	getFormat () const
@@ -68,11 +68,16 @@ public:
 		return swapChainFramebuffers;
 	}
 
-	const std::vector<VkImage>	getImages () const
+	const std::vector<VkImage>&	getImages () const
 	{
 		return swapChainImages;
 	}
-	
+
+	const std::vector<VkImageView>&	getImageViews () const
+	{
+		return swapChainImageViews;
+	}
+
 	VkSemaphore	currentAvailableSemaphore () const
 	{
 		return imageAvailableSemaphores [currentFrame].getHandle ();

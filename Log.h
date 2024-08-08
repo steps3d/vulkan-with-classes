@@ -12,7 +12,7 @@
 #include	<ostream>
 
 #define GLM_FORCE_RADIANS
-#define GLM_SWIZZLE
+#define GLM_FORCE_SWIZZLE
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -21,14 +21,28 @@
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 
+#if defined(_DEBUG)
+	#define	LOG_DEBUG	1
+#elif !defined(NDEBUG)
+	#define	LOG_DEBUG	1
+#else
+	#define	LOG_DEBUG	1
+#endif
+
 class	Log
 {
 	std::string			logName;
 	std::stringstream	s;
 	bool				fatal = false;
+	bool				debug = false;
+	bool				skip  = false;
 
 public:
-	Log  ( const std::string& logFileName ) : logName ( logFileName ) {}
+	Log  ( const std::string& logFileName, bool dbg = false ) : logName ( logFileName ) 
+	{
+		setDebug ( dbg );
+	}
+
 	~Log () {}
 
 	Log&	setLogName ( const std::string& logFileName )
@@ -38,6 +52,14 @@ public:
 		return *this;
 	}
 	
+	Log&	setDebug ( bool flag )
+	{
+		debug = flag;
+		skip  = debug && LOG_DEBUG;
+
+		return *this;
+	}
+
 	Log& flush ();
 
 	struct endl__ {};
@@ -49,27 +71,31 @@ public:
 	template <typename T>
 	Log& operator << ( T value )
 	{
-		s << value;
+		if ( !skip )
+			s << value;
 
 		return *this;
 	}
 	
 	Log& operator << ( endl__ )
 	{
-		flush ();
+		if ( !skip )
+			flush ();
 		
 		if ( fatal )
-			exit ( 1 );
+		{
+			assert ( 0 );		// so we break in debugger
+			exit   ( 1 );
+		}
 		
 		return *this;
 	}
 	
 	Log& operator << ( std::ostream&(*f)(std::ostream&) )
 	{
-		// s << f;
-		if ( f == std::endl )
 		{
-			flush ();
+			if ( !skip )
+				flush ();
 		
 			if ( fatal )
 				exit ( 1 );
@@ -88,6 +114,7 @@ public:
 
 Log& log ( int level = 0 );
 Log& fatal ();
+Log& debug ();
 
 inline std::ostream& operator << ( std::ostream& stream, const glm::vec2& v )
 { 

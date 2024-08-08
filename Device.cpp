@@ -41,44 +41,42 @@ QueueFamilyIndices QueueFamilyIndices::findQueueFamilies ( VkPhysicalDevice devi
 	return indices;
 }
 
-bool	Device :: create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions, const std::vector<const char*>& validationLayers )
+bool	Device :: create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions, const std::vector<const char*>& validationLayers, void * pNextFeatures, void * pNextProperties )
 {
 	instance         = _instance;
 	physicalDevice   = _physicalDebice;
 	families         = QueueFamilyIndices::findQueueFamilies ( physicalDevice, surface );
-	properties       = {};		// zero them
-	features         = {};
-	memoryProperties = {};
+	properties.pNext = pNextProperties;
 
 		// get various properties of physical device
-	vkGetPhysicalDeviceProperties       ( physicalDevice, &properties       );
-	vkGetPhysicalDeviceFeatures         ( physicalDevice, &features         );
+	vkGetPhysicalDeviceProperties2      ( physicalDevice, &properties       );
+	vkGetPhysicalDeviceFeatures2        ( physicalDevice, &features         );
 	vkGetPhysicalDeviceMemoryProperties ( physicalDevice, &memoryProperties );
 
-	VkDeviceQueueCreateInfo queueCreateInfo = {};
-	float queuePriority                     = 1.0f;
-	VkDeviceCreateInfo createInfo           = {};
+	uint32_t	propertyCount;
 
-	queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	vkEnumerateDeviceExtensionProperties ( physicalDevice, nullptr, &propertyCount, nullptr );
+
+	extensions.resize ( propertyCount );
+
+	vkEnumerateDeviceExtensionProperties ( physicalDevice, nullptr, &propertyCount, extensions.data () );
+
+	VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+	float queuePriority                     = 1.0f;
+	VkDeviceCreateInfo createInfo           = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+
 	queueCreateInfo.queueFamilyIndex = families.graphicsFamily;
 	queueCreateInfo.queueCount       = 1;
-	queueCreateInfo.pQueuePriorities = &queuePriority;				// XXX - what about other families, std::vector<VkDeviceQueueCreateInfo>
+	queueCreateInfo.pQueuePriorities = &queuePriority;	
 
-	createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos       = &queueCreateInfo;
 	createInfo.queueCreateInfoCount    = 1;
-	createInfo.pEnabledFeatures        = &features;
+	//createInfo.pEnabledFeatures        = &features;
 	createInfo.enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 	createInfo.enabledLayerCount       = 0;
+	createInfo.pNext                   = pNextFeatures;
 
-		// device validation layers have been deprecated
-/*	if ( validationLayers.size () > 0 )
-	{
-		createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-	} 
-*/
 	if ( vkCreateDevice ( physicalDevice, &createInfo, nullptr, &device ) != VK_SUCCESS )
 		fatal () << "VulknaWindow: failed to create logical device!";
 
@@ -106,7 +104,7 @@ bool	Device :: create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, 
 	allocatorCreateInfo.physicalDevice   = physicalDevice;
 	allocatorCreateInfo.device           = device;
 	allocatorCreateInfo.instance         = instance;
-//	allocatorCreateInfo.pVulkanFunctions = &vulkanFuncs;
+	allocatorCreateInfo.flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
 	if ( vmaCreateAllocator ( &allocatorCreateInfo, &allocator ) != VK_SUCCESS )
 		fatal () << "vmasCreateAllocator failure" << std::endl;

@@ -7,7 +7,7 @@ glslang_cmd = "glslangValidator"
 
 def compile_shader ( shader ):
     print ( "Compiling", shader )
-    return subprocess.run ( [ glslang_cmd, "-V", shader, "-o", "{}.spv".format(shader) ] ).returncode
+    return subprocess.run ( [ glslang_cmd, "-V", shader, "-o", "{}.spv".format(shader), "--target-env", "vulkan1.2" ] ).returncode
 
 if __name__ == '__main__':
     ext_list = ( "vert", "frag", "geom", "comp", "tesc", "tese" )
