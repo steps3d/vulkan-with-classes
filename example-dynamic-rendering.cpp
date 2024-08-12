@@ -4,6 +4,8 @@
 #include	"DescriptorSet.h"
 #include	"Mesh.h"
 #include	"Controller.h"
+#include	"StatisticsPool.h"
+#include	"TimestampPool.h"
 
 struct Ubo 
 {
@@ -229,12 +231,6 @@ int main ( int argc, const char * argv [] )
 {
 	DevicePolicy	policy;
 
-	//VkPhysicalDeviceVulkan13Features features13 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
-
-	//features13.dynamicRendering = VK_TRUE;
-	//features13.synchronization2 = VK_TRUE;
-
-	//policy.addFeatures        ( &features13 );
 	policy.addDeviceExtension ( VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME );
 
 	return DynamicRenderingWindow ( 800, 600, "Dynamic rendering", &policy ).run ();

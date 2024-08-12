@@ -1,12 +1,13 @@
 #pragma once
+#include	"CommandBuffer.h"
 #include	"Device.h"
 
 
 class	TimestampPool
 {
-	Device        * device     = nullptr;
-	VkQueryPool	queryPpool = VK_NULL_HANDLE;
-	uint32_t	count      = 0;
+	Device        * device    = nullptr;
+	VkQueryPool		queryPool = VK_NULL_HANDLE;
+	uint32_t		count     = 0;
 
 	TimestampPool () = default;
 	~TimestampPool ()
@@ -30,7 +31,7 @@ class	TimestampPool
 	void	destroy ()
 	{
 		if ( queryPool && device )
-			vkDestroyQueryPool ( device.getDevice (), queryPool, nullptr );
+			vkDestroyQueryPool ( device->getDevice (), queryPool, nullptr );
 	}
 
 		// reset all timestamps in the pool
@@ -60,9 +61,24 @@ class	TimestampPool
 		return vkGetQueryPoolResults ( device->getDevice (), queryPool, first, num, uint32_t (results.size ()) * sizeof(uint64_t), results.data (), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT ) == VK_SUCCESS;
 	}
 
+	uint64_t	getResult ( uint32_t index )
+	{
+		uint64_t	value;
+
+		vkGetQueryPoolResults ( device->getDevice (), queryPool, index, 1, sizeof(uint64_t), &value, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT );
+
+		return value;
+	}
+
 		// convert  timestamp value to milliseconds
 	double	convertToMs ( uint64_t value )
 	{
-		return double(value) * device->properties.limits.timestampPeriod * 1e-6;
+		return double(value) * device->getProperties ().properties.limits.timestampPeriod * 1e-6;
+	}
+
+		// convert  timestamp value to seconds
+	double	convertToSec ( uint64_t value )
+	{
+		return double(value) * device->getProperties ().properties.limits.timestampPeriod * 1e-9;
 	}
 };

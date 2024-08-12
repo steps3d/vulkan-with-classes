@@ -103,33 +103,6 @@ endif ()
 set ( VK_FILES   VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp CommandBuffer.cpp )
 set ( MATH_FILES bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp )
 
-add_executable ( base-1 base-1.cpp Log.cpp )
-target_link_libraries ( base-1 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-2 base-2.cpp Log.cpp )
-target_link_libraries ( base-2 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-3 base-3.cpp Log.cpp )
-target_link_libraries ( base-3 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-4 base-4.cpp Log.cpp )
-target_link_libraries ( base-4 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-5 base-5.cpp Log.cpp )
-target_link_libraries ( base-5 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-6 base-6.cpp Log.cpp )
-target_link_libraries ( base-6 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-7 base-7.cpp Log.cpp Data.cpp )
-target_link_libraries ( base-7 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-8 base-8.cpp Log.cpp Data.cpp )
-target_link_libraries ( base-8 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
-add_executable ( base-9 base-9.cpp Log.cpp Data.cpp )
-target_link_libraries ( base-9 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
-
 add_executable ( example-1 example-1.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp CommandBuffer.cpp )
 target_link_libraries ( example-1 ${GLFW_LIB} "${Vulkan_LIBRARY}" )
 
