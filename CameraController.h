@@ -121,7 +121,7 @@ public:
 				rightPressed = false;
 		}
 		
-		log () << "Key typed: " << key << " " << action << " " << mods << Log::endl;
+		//log () << "Key typed: " << key << " " << action << " " << mods << Log::endl;
 
 		if ( action == GLFW_PRESS )
 		{

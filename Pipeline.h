@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include	<array>
 #include	<memory>			// for shared_ptr
 #include	"Data.h"
 #include	"Texture.h"
@@ -524,21 +525,21 @@ class	GraphicsPipeline
 	float										minDepthBounds         = 0.0f;
 	float										maxDepthBounds         = 1.0f;
 	
-	VkBool32                                   logicOpEnable           = VK_FALSE;
-	VkLogicOp                                  logicOp                 = VK_LOGIC_OP_COPY;
+	VkBool32                                    logicOpEnable           = VK_FALSE;
+	VkLogicOp                                   logicOp                 = VK_LOGIC_OP_COPY;
 //    uint32_t                                      attachmentCount;
 //    const VkPipelineColorBlendAttachmentState*    pAttachments;
-	float                                      blendConstants[4]       = { 0, 0, 0, 0 };
+	float                                       blendConstants[4]       = { 0, 0, 0, 0 };
 
 				// VkPipelineColorBlendAttachmentState 
-	VkBool32									blendEnable = VK_FALSE;
-	VkBlendFactor								srcColorBlendFactor;
-	VkBlendFactor								dstColorBlendFactor;
-	VkBlendOp									colorBlendOp;
-	VkBlendFactor								srcAlphaBlendFactor;
-	VkBlendFactor								dstAlphaBlendFactor;
-	VkBlendOp									alphaBlendOp;
-	VkColorComponentFlags						colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	VkBool32									blendEnable         = VK_FALSE;
+	VkBlendFactor								srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	VkBlendFactor								dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	VkBlendOp									colorBlendOp        = VK_BLEND_OP_ADD;
+	VkBlendFactor								srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	VkBlendFactor								dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	VkBlendOp									alphaBlendOp        = VK_BLEND_OP_ADD;
+	VkColorComponentFlags						colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	
 													// data for vertex
 	BindingDescription							vertexBindings;
@@ -1163,8 +1164,17 @@ public:
 		if ( vkCreatePipelineLayout ( device->getDevice (), &pipelineLayoutInfo, nullptr, &pipelineLayout ) != VK_SUCCESS )
 			fatal () << "Pipeline: failed to create pipeline layout!" << std::endl;
 
+		// Specify that these states will be dynamic, i.e. not part of pipeline state object.
+		std::array<VkDynamicState, 2> dynamics { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+		VkPipelineDynamicStateCreateInfo dynamic = {};
+		
+		dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamic.pDynamicStates    = dynamics.data ();
+		dynamic.dynamicStateCount = uint32_t ( dynamics.size() );
+
 		VkPipelineTessellationStateCreateInfo	tessStateCreateInfo = {};
-		VkGraphicsPipelineCreateInfo			pipelineInfo = {};
+		VkGraphicsPipelineCreateInfo			pipelineInfo        = {};
 		
 		pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.stageCount          = (uint32_t) shaderStages.size ();
@@ -1176,6 +1186,7 @@ public:
 		pipelineInfo.pMultisampleState   = &multisampling;
 		pipelineInfo.pDepthStencilState  = &depthStencil;
 		pipelineInfo.pColorBlendState    = &colorBlending;
+		pipelineInfo.pDynamicState       = &dynamic;
 		pipelineInfo.layout              = pipelineLayout;
 		pipelineInfo.renderPass          = renderPass.getHandle ();
 		pipelineInfo.subpass             = 0;

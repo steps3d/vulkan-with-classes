@@ -154,6 +154,8 @@ public:
 				.pipeline          ( pipeline )
 				.bindVertexBuffers ( { {vertexBuffer, 0} } )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.draw              ( 16 )
 				.end               ();
 		}

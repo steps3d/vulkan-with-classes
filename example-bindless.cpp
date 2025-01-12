@@ -141,6 +141,8 @@ public:
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor (0,0,0,1).clearDepthStencil () )
 				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.render            ( mesh.get () )
 				.end               ();
 		}

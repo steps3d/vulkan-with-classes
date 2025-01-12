@@ -150,7 +150,9 @@ public:
 				.begin             ()
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent () ).clearColor ().clearDepthStencil () )
 				.pipeline          ( pipeline )
-				.addDescriptorSets ( { descriptorSets[i] } );
+				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () );
 
 			PushData	data = { buffer.getDeviceAddress () };
 

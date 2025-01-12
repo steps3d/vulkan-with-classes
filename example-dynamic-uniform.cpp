@@ -128,7 +128,9 @@ public:
 			commandBuffers [i]
 				.begin             ()
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor ().clearDepthStencil () )
-				.pipeline          ( pipeline );
+				.pipeline          ( pipeline )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () );
 
 			for ( int j = 0; j < 64; j++ )
 			{

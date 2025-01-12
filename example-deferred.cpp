@@ -224,10 +224,12 @@ public:
 		for ( size_t i = 0; i < commandBuffers.size(); i++ )
 		{
 			commandBuffers [i].begin ().beginRenderPass ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor ().clearDepthStencil () )
-				.pipeline ( pipeline )
+				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
-				.render ( &screen )
-				.end ();
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
+				.render            ( &screen )
+				.end               ();
 		}
 	}
 
@@ -240,6 +242,8 @@ public:
 				.clearColor ( 0, 0, 0, 1 ).clearColor ( 0, 0, 0, 1 ).clearDepthStencil ()
 				.framebuffer ( fb ).extent ( fb.getWidth (), fb.getHeight () ) )
 			.pipeline          ( offscreenPipeline )
+			.setViewport       ( fb.getWidth (), fb.getHeight () )
+			.setScissor        ( fb.getWidth (), fb.getHeight () )
 			.addDescriptorSets ( { offscreenDescriptorSet1 } ).render ( box1 )
 			.addDescriptorSets ( { offscreenDescriptorSet2 } ).render ( box2 ).render ( box3 ).render ( box4 ).render ( box5 )
 			.addDescriptorSets ( { offscreenDescriptorSet3 } ).render ( knot )
@@ -248,7 +252,6 @@ public:
 	
 	void updateUniformBuffer ( uint32_t currentImage )
 	{
-		//float				time = (float)getTime ();
 		auto				mv   = controller->getModelView  ();
 
 		uniformBuffers [currentImage]->mv   = mv;

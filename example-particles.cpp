@@ -188,6 +188,8 @@ public:
 				.pipeline          ( graphicsPipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
 				.bindVertexBuffers ( { {posBuffer, 0}, { velBuffer, 1 } } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.draw              ( (uint32_t)numParticles, 1, 0, 0 )
 				.end               ();
 		}

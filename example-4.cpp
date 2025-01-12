@@ -117,8 +117,10 @@ public:
 		for ( size_t i = 0; i < commandBuffers.size(); i++ )
 		{
 			commandBuffers [i].begin ().beginRenderPass ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor ().clearDepthStencil () )
-				.pipeline ( pipeline )
-				.addDescriptorSets ( { descriptorSets[i] } );
+				.pipeline          ( pipeline )
+				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () );
 
 			model.render ( pipeline, commandBuffers [i], glm::mat4 ( 1.0f ) );
 

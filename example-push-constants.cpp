@@ -124,7 +124,9 @@ public:
 				.begin             ()
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent () ).clearColor ().clearDepthStencil () )
 				.pipeline          ( pipeline )
-				.addDescriptorSets ( { descriptorSets[i] } );
+				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () );
 
 			for ( int j = 0; j < 64; j++ )
 			{

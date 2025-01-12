@@ -31,7 +31,7 @@ class	GeometryShaderWindow : public VulkanWindow
 	int								length = 1;
 
 public:
-	GeometryShaderWindow ( int w, int h, const std::string& t ) : VulkanWindow ( w, h, t )
+	GeometryShaderWindow ( int w, int h, const std::string& t, bool hasDepth, DevicePolicy * p ) : VulkanWindow ( w, h, t, hasDepth, p )
 	{
 		setController ( new RotateController ( this, glm::vec3(-7, 0, 0) ) );
 
@@ -140,6 +140,8 @@ public:
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent () ).clearColor ().clearDepthStencil () )
 				.pipeline          ( pipelineSolid )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.render            ( mesh.get () )
 				.pipeline          ( pipelineHair )
 				.addDescriptorSets ( { descriptorSets[i] } )
@@ -175,5 +177,9 @@ public:
 
 int main ( int argc, const char * argv [] ) 
 {
-	return GeometryShaderWindow ( 800, 600, "Geometry shader window" ).run ();
+	DevicePolicy	policy;
+
+	policy.features.features.geometryShader = VK_TRUE;
+
+	return GeometryShaderWindow ( 800, 600, "Geometry shader window", true, &policy ).run ();
 }

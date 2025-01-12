@@ -93,7 +93,9 @@ public:
 				.pipeline          ( pipeline )
 				.bindVertexBuffers (  { {vertexBuffer, 0} } )
 				.addDescriptorSets ( {descriptorSets[i]} )
-				.draw              ( 3 )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
+			    .draw              ( 3 )
 				.end               ();
 	}
 };

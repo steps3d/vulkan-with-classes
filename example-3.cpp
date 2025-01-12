@@ -136,11 +136,13 @@ public:
 		for ( size_t i = 0; i < commandBuffers.size(); i++ )
 		{
 			commandBuffers [i].begin ().beginRenderPass ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent () ).clearColor ().clearDepthStencil () )
-				.pipeline ( pipeline )
+				.pipeline          ( pipeline )
 				.bindVertexBuffers ( { {vertexBuffer, 0} } )
-				.bindIndexBuffer ( indexBuffer )
-				.addDescriptorSets ( { descriptorSets[i] } )
-				.drawIndexed ( static_cast<uint32_t>(indices.size()) )
+				.bindIndexBuffer   ( indexBuffer )
+				.addDescriptorSets ( { descriptorSets [i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
+				.drawIndexed       ( static_cast<uint32_t>(indices.size ()) )
 				.end ();
 		}
 	}

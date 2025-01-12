@@ -218,7 +218,9 @@ public:
 			commandBuffers [i]
 				.begin             ()
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor (0,0,0,1).clearDepthStencil () )
-				.pipeline          ( pipeline );
+				.pipeline          ( pipeline )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () );
 
 				VkDeviceSize	bufferOffset     = 0;
 				uint32_t		bufferIndexUbo   = 0;
@@ -251,8 +253,6 @@ public:
 	void updateUniformBuffers ( uint32_t )
 	{
 		float	t     = float ( getTime () );
-
-		//t = 0;
 
 		cameraUbo->view  = controller->getModelView ();
 		cameraUbo->proj  = controller->getProjection ();

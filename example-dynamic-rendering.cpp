@@ -36,7 +36,7 @@ public:
 
 		mesh = std::unique_ptr<Mesh> ( loadMesh ( device, "../../Models/teapot.3ds", 0.04f ) );
 
-		sampler.create  ( device );		// use default optiona		
+		sampler.create  ( device );		// use default options
 		texture.load    ( device, "../../Textures/Fieldstone.dds", false );
 		loadExtensions  ();
 		createPipelines ();
@@ -120,8 +120,6 @@ public:
 
 	void	createCommandBuffers ( Renderpass& renderPass )
 	{
-		//auto	framebuffers = swapChain.getFramebuffers ();
-
 		commandBuffers = device.allocCommandBuffers ( swapChain.imageCount () );
 
 		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
@@ -184,15 +182,11 @@ public:
 
 			vkCmdBeginRenderingKHR ( commandBuffers [i].getHandle (), &renderingInfo );
 
-			//VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
-			//vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-
-			//VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
-			//vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
-
 			commandBuffers [i]
 				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.render            ( mesh.get () );
 
 			vkCmdEndRenderingKHR ( commandBuffers [i].getHandle () );

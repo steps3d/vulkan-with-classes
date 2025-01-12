@@ -134,6 +134,8 @@ public:
 				.bindVertexBuffers ( { {vertexBuffer, 0} } )
 				.bindIndexBuffer   ( indexBuffer )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.drawIndexed       ( static_cast<uint32_t>(indices.size()) )
 				.end ();
 		}

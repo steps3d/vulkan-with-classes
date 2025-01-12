@@ -198,11 +198,13 @@ public:
 		for ( size_t i = 0; i < commandBuffers.size(); i++ )
 		{
 			commandBuffers [i].begin ().beginRenderPass ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ).clearColor ().clearDepthStencil () )
-				.pipeline ( pipeline )
+				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
-				.render   ( mesh1.get () )
-				.render   ( mesh2.get () )
-				.end      ();
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
+				.render            ( mesh1.get () )
+				.render            ( mesh2.get () )
+				.end               ();
 		}
 	}
 
@@ -214,6 +216,8 @@ public:
 		shadowCmd.begin ( true ).beginRenderPass ( RenderPassInfo ( fb.getRenderpass() ).clearDepthStencil ().framebuffer ( fb ).extent ( fb.getWidth (), fb.getHeight () ) )
 			.pipeline          ( shadowPipeline )
 			.addDescriptorSets ( { offscreenDescriptorSet } )
+			.setViewport       ( fb.getWidth (), fb.getHeight () )
+			.setScissor        ( fb.getWidth (), fb.getHeight () )
 			.render            ( mesh1.get () )
 			.render            ( mesh2.get () )
 			.end               ();

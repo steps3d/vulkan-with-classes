@@ -352,6 +352,51 @@ public:
 		return *this;
 	}
 
+	CommandBuffer& fillBuffer ( Buffer& buf, VkDeviceSize dstOffset = 0, VkDeviceSize size = VK_WHOLE_SIZE, uint32_t value = 0)
+	{
+		assert((size % 4) == 0 || size == VK_WHOLE_SIZE);
+
+		vkCmdFillBuffer(buffer, buf.getHandle(), dstOffset, size, value);
+
+		return *this;
+	}
+
+	CommandBuffer& setViewport ( uint32_t width, uint32_t height )
+	{
+		VkViewport vp = {};
+
+		vp.width = static_cast<float> (width);
+		vp.height = static_cast<float> (height);
+		vp.minDepth = 0.0f;
+		vp.maxDepth = 1.0f;
+
+		vkCmdSetViewport(buffer, 0, 1, &vp);
+
+		return *this;
+	}
+
+	CommandBuffer& setViewport ( const VkExtent2D& extent )
+	{
+		return setViewport ( extent.width, extent.height );
+	}
+
+	CommandBuffer& setScissor ( uint32_t width, uint32_t height )
+	{
+		VkRect2D scissor = {};
+
+		scissor.extent.width  = width;
+		scissor.extent.height = height;
+		
+		vkCmdSetScissor ( buffer, 0, 1, &scissor );
+
+		return *this;
+	}
+
+	CommandBuffer& setScissor(const VkExtent2D& extent)
+	{
+		return setScissor(extent.width, extent.height);
+	}
+
 	template <class C>
 	CommandBuffer& render ( C * obj )
 	{

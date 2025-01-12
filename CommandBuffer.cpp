@@ -100,7 +100,7 @@ void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkBufferMemoryBa
 	std::vector<VkBufferMemoryBarrier2>	bufferBarriers;
 	VkDependencyInfo					dependencyInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
 
-	for ( auto b : bufBarriers )
+	for ( auto& b : bufBarriers )
 		bufferBarriers.push_back ( b );
 
 	dependencyInfo.dependencyFlags          = dependencyFlags;
@@ -115,7 +115,7 @@ void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkImageMemoryBar
 	std::vector<VkImageMemoryBarrier2>	imageBarriers;
 	VkDependencyInfo					dependencyInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
 
-	for ( auto i : imgBarriers )
+	for ( auto& i : imgBarriers )
 		imageBarriers.push_back ( i );
 
 	dependencyInfo.dependencyFlags          = dependencyFlags;
@@ -131,10 +131,10 @@ void pipelineBarrier ( CommandBuffer& cb, std::initializer_list<VkBufferMemoryBa
 	std::vector<VkImageMemoryBarrier2>	imageBarriers;
 	VkDependencyInfo					dependencyInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
 
-	for ( auto b : bufBarriers )
+	for ( auto& b : bufBarriers )
 		bufferBarriers.push_back ( b );
 
-	for ( auto i : imgBarriers )
+	for ( auto& i : imgBarriers )
 		imageBarriers.push_back ( i );
 
 	dependencyInfo.dependencyFlags          = dependencyFlags;

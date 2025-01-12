@@ -50,7 +50,7 @@ class	TextLayer
 	Semaphore					semaphore;
 
 public:
-	TextLayer ( VulkanWindow * win ) : window( win ) {}
+	TextLayer ( VulkanWindow * win ) : window ( win ) {}
 
 	SwapChain&	getSwapChain ()
 	{
@@ -229,7 +229,9 @@ public:
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( width, height ) )
 				.pipeline          ( pipeline )
 				.bindVertexBuffers (  { {textBuffer, 0} } )
-				.addDescriptorSets ( { descriptorSet } );
+				.addDescriptorSets ( { descriptorSet } )
+				.setViewport       ( window->getExtent () )
+				.setScissor        ( window->getExtent () );
 
 			for ( int j = 0; j < numLetters; j++ )
 				cmds [i].draw ( 4, 1, 4 * j );
@@ -364,6 +366,8 @@ public:
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).clearColor ( 0, 0, 0, 1 ).clearDepthStencil ().extent ( swapChain.getExtent ().width, swapChain.getExtent ().height ) )
 				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.render            ( mesh.get () )
 				.end               ();
 		}

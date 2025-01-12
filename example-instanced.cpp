@@ -118,6 +118,8 @@ public:
 				.beginRenderPass   ( RenderPassInfo ( renderPass ).framebuffer ( framebuffers [i] ).extent ( swapChain.getExtent () ).clearColor ().clearDepthStencil () )
 				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
+				.setViewport       ( swapChain.getExtent () )
+				.setScissor        ( swapChain.getExtent () )
 				.renderInstanced   ( mesh.get (), 8*64 )		// draw 64 instances
 				.end               ();
 		}
