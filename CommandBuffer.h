@@ -67,7 +67,7 @@ public:
 
 	RenderPassInfo&	clearColor ( float r = 0, float g = 0, float b = 0, float a = 1 )
 	{
-		VkClearValue c;
+		VkClearValue c {};
 
 		c.color = { r, g, b, a };
 
@@ -78,7 +78,7 @@ public:
 
 	RenderPassInfo&	clearDepthStencil ( float d = 1.0f, uint32_t s = 0 )
 	{
-		VkClearValue c;
+		VkClearValue c {};
 
 		c.depthStencil = { d, s };
 
@@ -123,7 +123,7 @@ public:
 			srcQueueFamilyIndex = srcIndex;
 			dstQueueFamilyIndex = dstIndex;
 			buffer              = buf.getHandle ();
-			offs                = offs;
+			offset              = offs;
 			size                = sz;
 		}
 	};
@@ -228,7 +228,7 @@ public:
 		buffer = VK_NULL_HANDLE;
 	}
 
-	VkCommandBuffer	getHandle ()
+	VkCommandBuffer	getHandle () const
 	{
 		return buffer;
 	}

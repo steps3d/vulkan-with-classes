@@ -27,6 +27,7 @@ struct	DevicePolicy
 	VkPhysicalDeviceProperties2			      * extraProperties             = nullptr;
 	VkPhysicalDeviceBufferDeviceAddressFeatures	bufferDeviceAddressFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
 	VkPhysicalDeviceVulkan13Features			features13                  = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+	VkFormat					depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
 
 	DevicePolicy ()
 	{

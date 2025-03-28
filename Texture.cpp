@@ -509,7 +509,7 @@ bool Texture::load ( Device& dev, const std::string& fileName, bool mipmaps, boo
 
 bool	Texture :: loadRaw ( Device& dev, int texWidth, int texHeight, const void * pixels, VkFormat format, bool mipmaps )
 {
-	int				bpp       = 4;
+	int	bpp = 4;
 
 	if ( format == VK_FORMAT_R8_UNORM || format == VK_FORMAT_R8_SNORM || format == VK_FORMAT_R8_USCALED || format == VK_FORMAT_R8_SSCALED || format == VK_FORMAT_R8_USCALED || format == VK_FORMAT_R8_SSCALED ||
 		 format == VK_FORMAT_R8_UINT  || format == VK_FORMAT_R8_SINT  || format == VK_FORMAT_R8_SRGB    || format == VK_FORMAT_R8_UINT    || format == VK_FORMAT_R8_SINT    || format == VK_FORMAT_R8_SRGB )
@@ -1201,7 +1201,7 @@ static void uploadTextureData ( Device& device, Texture& texture, Buffer& stagin
 }
 
 	// load DDS and KTX using GLI library
-bool loadGli ( Device& device, Texture& texture, Data& data, bool srgb /* ???? */)
+bool loadGli ( Device& device, Texture& texture, Data& data, bool srgb )
 {
 	if ( !data.isOk () )
 		return false;
@@ -1209,20 +1209,16 @@ bool loadGli ( Device& device, Texture& texture, Data& data, bool srgb /* ???? *
 	gli::texture			tex ( gli::load ( (const char*) data.getPtr (), (size_t) data.getLength () ) );
 	VkImageCreateFlags		flags         = 0;
 	VkImageUsageFlags		usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	//VkFormatFeatureFlags	featureFlags;
-	//VkSharingMode			sharingMode;
 	VkFormat				format        = convertFormat   ( tex.format () );
 	VkImageType				type          = convertType     ( tex.target () );
 	VkImageViewType			viewType      = convertViewType ( tex.target () );
 	VkExtent3D				extent        = convertExtent   ( tex.extent () );
-	//uint32_t				face_total    = tex.layers () * tex.faces ();
 	VkImageAspectFlags		aspectMask    = VK_IMAGE_ASPECT_COLOR_BIT;
 	uint32_t				width         = extent.width;
 	uint32_t				height        = extent.height;
 	uint32_t				depth         = extent.depth;
 	bool					isCompressed  = gli::is_compressed ( tex.format () );
-	// glm::ivec3			copyExtent    = isCompressed ? compressedExtent ( tex ) : extent;
-	glm::ivec3				blockExtent   = gli::block_extent ( tex.format () );		// block size in texels
+	glm::ivec3				blockExtent   = gli::block_extent  ( tex.format () );		// block size in texels
 	int						blockWidth    = blockExtent.x;
 	int						blockHeight   = blockExtent.y;
 	int						blockSize     = (int)gli::block_size ( tex.format() );

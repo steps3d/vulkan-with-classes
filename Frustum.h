@@ -8,7 +8,7 @@ public:
 	enum side { LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, BACK = 4, FRONT = 5 };
 	std::array<glm::vec4, 6> planes;
 
-	void update(glm::mat4 matrix)
+	void update ( glm::mat4 matrix )
 	{
 			planes[LEFT].x = matrix[0].w + matrix[0].x;
 			planes[LEFT].y = matrix[1].w + matrix[1].x;
@@ -43,13 +43,14 @@ public:
 			for (auto i = 0; i < planes.size(); i++)
 			{
 				float length = sqrtf(planes[i].x * planes[i].x + planes[i].y * planes[i].y + planes[i].z * planes[i].z);
+
 				planes[i] /= length;
 			}
 	}
 		
-	bool checkSphere(glm::vec3 pos, float radius)
+	bool checkSphere ( glm::vec3 pos, float radius )
 	{
-		for (auto i = 0; i < planes.size(); i++)
+		for ( auto i = 0; i < planes.size(); i++ )
 		{
 			if ((planes[i].x * pos.x) + (planes[i].y * pos.y) + (planes[i].z * pos.z) + planes[i].w <= -radius)
 				return false;

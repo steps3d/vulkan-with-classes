@@ -116,9 +116,6 @@ void	VulkanWindow::clean ()
 
 int	VulkanWindow::run () 
 {
-	//if ( device.getDevice () == VK_NULL_HANDLE )	// chec whether we've initialized Vulkan
-	//	initVulkan ();	
-
 	while ( !glfwWindowShouldClose ( window ) )
 	{
 		glfwPollEvents ();

@@ -88,7 +88,7 @@ if (WIN32)
 		#set ( ASSIMP_LIB_PATH "${ASSIMP_DIR}/lib/Debug" )
 	endif ()
 
-	include_directories ( ${GLM} ${GLI} ${GLFW}/include ${ASSIMP_DIR}/include "${Vulkan_INCLUDE_DIRS}" "ext" )
+	include_directories ( ${GLM} ${GLI} ${GLFW}/include ${ASSIMP_DIR}/include "${Vulkan_INCLUDE_DIRS}" "ext" "ext/tinygltf" )
 	link_directories    ( ${GLFW_LIB_PATH} ${ASSIMP_LIB_PATH} ${ZLIB_PATH} ) 
 	
 	 add_definitions( -D_CRT_SECURE_NO_WARNINGS )
@@ -162,4 +162,16 @@ target_link_libraries ( example-descriptor-buffer ${GLFW_LIB} "${Vulkan_LIBRARY}
 
 add_executable ( example-dynamic-rendering example-dynamic-rendering.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
 target_link_libraries ( example-dynamic-rendering ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
+
+add_executable ( example-host-image-load example-host-image-load.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp CommandBuffer.cpp )
+target_link_libraries ( example-host-image-load ${GLFW_LIB} "${Vulkan_LIBRARY}" )
+
+add_executable ( example-tinygltf example-tinygltf.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
+target_link_libraries ( example-tinygltf ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
+
+add_executable ( example-deferred-dynamic-rendering example-deferred-dynamic-rendering.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
+target_link_libraries ( example-deferred-dynamic-rendering ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
+
+add_executable ( example-reversed-z example-reversed-z.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
+target_link_libraries ( example-reversed-z ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
 

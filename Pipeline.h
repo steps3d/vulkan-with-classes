@@ -1037,27 +1037,13 @@ public:
 		inputAssembly.topology               = topology;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-		VkViewport viewport = {};
-
-		viewport.x        = 0.0f;
-		viewport.y        = 0.0f;
-		viewport.width    = (float) width;
-		viewport.height   = (float) height;
-		viewport.minDepth = minDepth;
-		viewport.maxDepth = maxDepth;
-
-		VkRect2D scissor = {};
-		
-		scissor.offset = {0, 0};
-		scissor.extent = VkExtent2D { width, height };
-
 		VkPipelineViewportStateCreateInfo viewportState = {};
 
 		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.viewportCount = 1;
-		viewportState.pViewports    = &viewport;
+		viewportState.pViewports    = nullptr;
 		viewportState.scissorCount  = 1;
-		viewportState.pScissors     = &scissor;
+		viewportState.pScissors     = nullptr;
 
 		VkPipelineRasterizationStateCreateInfo rasterizer = {};
 

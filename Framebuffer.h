@@ -12,7 +12,8 @@ class	Framebuffer
 
 	Device		  			  * device      = nullptr;
 	VkFramebuffer				framebuffer = VK_NULL_HANDLE;
-	uint32_t					width, height;	
+	uint32_t					width       = 0;
+	uint32_t					height      = 0;
 	Renderpass					renderpass;
 	std::vector<Attachment *>	attachments;
 
@@ -25,8 +26,6 @@ public:
 		std::swap ( width,       f.width       );
 		std::swap ( height,      f.height      );
 		std::swap ( attachments, f.attachments );
-		//renderpass = f.renderpass;
-		//f.renderpass = Renderpass ()
 	}
 	Framebuffer ( const Framebuffer& ) = delete;
 	~Framebuffer ()
