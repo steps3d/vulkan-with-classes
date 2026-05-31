@@ -33,9 +33,15 @@ class	Log
 {
 	std::string			logName;
 	std::stringstream	s;
-	bool				fatal = false;
-	bool				debug = false;
-	bool				skip  = false;
+	bool				fatal       = false;
+	bool				debug       = false;
+	bool				skip        = false;
+	bool				isInfo      = false;
+	bool				isWarning   = false;
+	bool				isError     = false;
+	bool				skipInfo    = false;
+	bool				skipWarning = false;
+	bool				showTime    = false;
 
 public:
 	Log  ( const std::string& logFileName, bool dbg = false ) : logName ( logFileName ) 
@@ -62,8 +68,10 @@ public:
 
 	Log& flush ();
 
-	struct endl__ {};
-	class fatal__ {};
+	struct endl__   {};
+	class fatal__   {};
+	class info__    {};
+	class warning__ {};
 	
 	static endl__ 	endl;
 	static Log		appLog;
@@ -88,6 +96,10 @@ public:
 			exit   ( 1 );
 		}
 		
+		isInfo    = false;
+		isWarning = false;
+		isError   = false;
+
 		return *this;
 	}
 	
@@ -101,6 +113,10 @@ public:
 				exit ( 1 );
 		}
 		
+		isInfo    = false;
+		isWarning = false;
+		isError   = false;
+
 		return *this;
 	}
 	
@@ -110,11 +126,26 @@ public:
 		
 		return *this;
 	}
+
+	Log& operator << ( info__ )
+	{
+		isInfo = true;
+
+		return *this;
+	}
+	Log& operator << ( warning__ )
+	{
+		isWarning = true;
+
+		return *this;
+	}
 };
 
-Log& log ( int level = 0 );
-Log& fatal ();
-Log& debug ();
+Log& log     ( int level = 0 );
+Log& fatal   ();
+Log& debug   ();
+Log& info    ();
+Log& warning ();
 
 inline std::ostream& operator << ( std::ostream& stream, const glm::vec2& v )
 { 

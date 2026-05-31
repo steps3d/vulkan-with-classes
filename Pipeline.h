@@ -22,6 +22,11 @@ class	Shader
 	std::string		name   = "main";
 	
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_SHADER_MODULE
+	};
+
 	Shader  () {}
 	Shader ( Shader&& sh )
 	{
@@ -551,6 +556,11 @@ class	GraphicsPipeline
 	uint32_t									numColorBlendAttachments = 0;		// for dynamic rendering, when we don't have any valid renderpass
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_PIPELINE
+	};
+
 	GraphicsPipeline () {}
 	~GraphicsPipeline () 
 	{
@@ -659,6 +669,16 @@ public:
 		tessEvalShader.load ( device->getDevice (), data );
 		
 		return *this; 
+	}
+
+	const Shader&	getVertexShader () const
+	{
+		return vertShader;
+	}
+
+	const Shader&	getFragmentShader () const
+	{
+		return fragShader;
 	}
 
 	GraphicsPipeline&	setPatchSize ( uint32_t pSize )
@@ -1203,6 +1223,11 @@ class	ComputePipeline
 	std::vector<VkPushConstantRange>	pushConsts;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_PIPELINE
+	};
+
 	ComputePipeline  () = default;
 	~ComputePipeline ()
 	{

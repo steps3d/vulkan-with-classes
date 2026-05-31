@@ -436,7 +436,7 @@ void	Texture::generateMipmaps ( SingleTimeCommand& cmd, VkFormat imageFormat, in
 	// add .hdr and .dds support !!!
 bool Texture::load ( Device& dev, const std::string& fileName, bool mipmaps, bool srgb )
 {
-	Data			data ( fileName );
+	Data	data ( fileName );
 
 	if ( !data.isOk () )
 	{
@@ -445,6 +445,11 @@ bool Texture::load ( Device& dev, const std::string& fileName, bool mipmaps, boo
 		return false;
 	}
 
+	return loadData ( dev, data, mipmaps, srgb );
+}
+
+bool Texture::loadData ( Device& dev, Data& data, bool mipmaps, bool srgb )
+{
 	if ( loadDds ( dev, *this, data ) )		// check for .dds texture
 		return true;
 
@@ -474,7 +479,7 @@ bool Texture::load ( Device& dev, const std::string& fileName, bool mipmaps, boo
 
 		if ( !pixels )
 		{
-			log () << "Texture: failed to load texture image! " << fileName << Log::endl;
+			log () << "Texture: failed to load texture image! " << data.getFileName () << Log::endl;
 			return false;
 		}
 

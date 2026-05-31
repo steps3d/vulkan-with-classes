@@ -149,6 +149,11 @@ public:
 		hostWrite = 2
 	};
 
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_BUFFER
+	};
+
 	Buffer () {}
 #ifdef USE_VMA
 	Buffer ( Buffer&& b )

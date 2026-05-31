@@ -34,6 +34,8 @@ public:
 		sampler.create  ( device );		// use default optiona		
 		texture.load    ( device, "../../Textures/Fieldstone.dds", false );
 		createPipelines ();
+
+		setName ( texture, "Sample image" );
 	}
 
 	void	createUniformBuffers ()
@@ -82,6 +84,11 @@ public:
 			.setDepthWrite     ( true )
 			.create            ( renderPass );			
 
+			// note - we set name after loading, so warning will be unnamed
+		setName ( pipeline.getVertexShader   (), "my vertex shader"      );
+		setName ( pipeline.getFragmentShader (), "my fragment shader"    );
+		setName ( pipeline,                      "my rendering pipeline" );
+
 				// create before command buffers
 		swapChain.createFramebuffers ( renderPass, depthTexture.getImageView () );
 
@@ -119,9 +126,13 @@ public:
 				.pipeline          ( pipeline )
 				.addDescriptorSets ( { descriptorSets[i] } )
 				.setViewport       ( swapChain.getExtent () )
-				.setScissor        ( swapChain.getExtent () )
-				.render            ( mesh.get () )
-				.end               ();
+				.setScissor        ( swapChain.getExtent () );
+
+				insertLabel ( commandBuffers [i], "Rendering", glm::vec4 ( 0, 1, 0, 1 ) );
+
+			commandBuffers [i]
+				.render ( mesh.get () )
+				.end    ();
 		}
 	}
 

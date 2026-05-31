@@ -13,6 +13,8 @@
 bool	isDepthFormat   ( VkFormat format );
 bool	isStencilFormat ( VkFormat );
 
+class	Data;
+
 class	ImageParams
 {
 	VkImageCreateInfo imageInfo = {};
@@ -107,6 +109,11 @@ public:
 	{
 		hostRead  = 1, 
 		hostWrite = 2
+	};
+
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_IMAGE
 	};
 
 	Image  () = default;
@@ -293,6 +300,11 @@ class	Sampler
 	float					maxLod        = 0;
 	
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_SAMPLER
+	};
+
 	Sampler () {}
 	Sampler ( Sampler&& s )
 	{
@@ -403,6 +415,11 @@ class Texture
 	VkImageView 	imageView = VK_NULL_HANDLE;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_IMAGE
+	};
+
 	Texture () = default;
 	Texture ( Texture&& t ) : image ( std::move ( t.image ) )
 	{
@@ -472,6 +489,7 @@ public:
 	bool	load            ( Device& dev, const std::string& fileName, bool mipmaps = true, bool srgb = false );
 	bool	loadCubemap     ( Device& dev, const std::vector<const char *>& files, bool mipmaps = true, bool srgb = false );
 	bool	loadRaw         ( Device& dev, int w, int h, const void * ptr, VkFormat format, bool mipmaps = true );
+	bool	loadData        ( Device& dev, Data& data, bool mipmaps = true, bool srgb = false );
 };
 
 class	Data;

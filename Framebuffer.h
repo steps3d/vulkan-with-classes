@@ -18,6 +18,11 @@ class	Framebuffer
 	std::vector<Attachment *>	attachments;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_FRAMEBUFFER
+	};
+
 	Framebuffer () = default;
 	Framebuffer ( Framebuffer&& f )
 	{

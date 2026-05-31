@@ -44,9 +44,9 @@ public:
 
 	void	createUniformBuffers ()
 	{
-		uniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize ( swapChain.getImageCount() );
 		
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device );
 	}
 
@@ -57,9 +57,9 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			descriptorSets  [i]
 				.setLayout        ( device, descAllocator, pipelineHair.getDescLayout () )

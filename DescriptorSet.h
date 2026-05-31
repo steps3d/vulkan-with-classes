@@ -66,6 +66,11 @@ class	DescriptorSet
 	std::vector<VkWriteDescriptorSet>	writes;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_DESCRIPTOR_SET
+	};
+
 	DescriptorSet () = default;
 	DescriptorSet ( DescriptorSet&& ) 
 	{ 

@@ -6,6 +6,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat2;
+using glm::mat3;
+using glm::mat4;
+
 #include <cstdint>
 
 #include	"Device.h"
@@ -100,7 +107,7 @@ struct	DevicePolicy
 		{
 			vkGetPhysicalDeviceProperties ( device, &props );				// get device properties
 
-			log () << "GPU " <<  props.deviceName << std::endl;
+			log () << "GPU: " <<  props.deviceName << "\n" << std::endl;
 
 			return device;
 		}
@@ -186,6 +193,8 @@ public:
 	{
 		descAllocator.clean ();
 		depthTexture.clean  ();
+		swapChain.clean     ();
+
 		clean ();
 	}
 
@@ -352,21 +361,144 @@ protected:
 	virtual	void setupDebugMessenger ( VkInstance instance );
 	virtual	void populateDebugMessengerCreateInfo ( VkDebugUtilsMessengerCreateInfoEXT& createInfo );
 
-		// Vulkan debug callback
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback ( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData )
-	{
-		if ( messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )		// display only warning or higher
-			log () << "validation layer: " << pCallbackData->pMessage << Log::endl;
-
-		return VK_FALSE;
-	}
+			// Vulkan debug callback
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback ( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData );
 	
 			// Vulkan funcions from exts
 	static VkResult createDebugUtilsMessengerEXT  ( VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger );
 	static void		destroyDebugUtilsMessengerEXT ( VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator );
+
+	// define function pointers for extensions
+	static	PFN_vkDebugUtilsMessengerCallbackEXT	vkDebugUtilsMessengerCallbackEXT;
+	static	PFN_vkCreateDebugUtilsMessengerEXT		vkCreateDebugUtilsMessengerEXT;
+	static	PFN_vkDestroyDebugUtilsMessengerEXT		vkDestroyDebugUtilsMessengerEXT;
+	static	PFN_vkSetDebugUtilsObjectNameEXT		vkSetDebugUtilsObjectNameEXT;
+	static	PFN_vkSetDebugUtilsObjectTagEXT			vkSetDebugUtilsObjectTagEXT;
+	static	PFN_vkQueueBeginDebugUtilsLabelEXT		vkQueueBeginDebugUtilsLabelEXT;
+	static	PFN_vkQueueEndDebugUtilsLabelEXT		vkQueueEndDebugUtilsLabelEXT;
+	static	PFN_vkCmdBeginDebugUtilsLabelEXT		vkCmdBeginDebugUtilsLabelEXT;
+	static	PFN_vkCmdEndDebugUtilsLabelEXT			vkCmdEndDebugUtilsLabelEXT;
+	static	PFN_vkQueueInsertDebugUtilsLabelEXT		vkQueueInsertDebugUtilsLabelEXT;
+	static	PFN_vkCmdInsertDebugUtilsLabelEXT		vkCmdInsertDebugUtilsLabelEXT;
+
+	void setName ( VkObjectType type, const void * handle, const char * name )
+	{
+		VkDebugUtilsObjectNameInfoEXT   info = {};      // zero it
+
+		info.sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+		info.objectType   = type;
+		info.objectHandle = uint64_t ( handle );
+		info.pObjectName  = name;
+
+		vkSetDebugUtilsObjectNameEXT ( device.getDevice (), &info );
+	}
+
+	void setName ( Texture& texture, const std::string& name )
+	{
+		setName ( VK_OBJECT_TYPE_IMAGE, texture.getImage ().getHandle (), name.c_str () );
+	}
+
+	template <class T>
+	void setName ( T& object, const std::string& name )
+	{
+		setName ( VkObjectType(T::type_id), object.getHandle (), name.c_str () );
+	}
+
+	template <class T>
+	void setName ( const T& object, const std::string& name )
+	{
+		setName ( VkObjectType(T::type_id), object.getHandle (), name.c_str () );
+	}
+
+	template <typename VT, typename DT>
+	void setTag ( VT& object, uint64_t tag, DT& data )
+	{
+		VkDebugUtilsObjectTagInfoEXT    info = {};
+
+		info.sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
+		info.objectType   = VT::type_id;
+		info.objectHandle = uint64_t ( object.getHandle () );
+		info.tagName      = tag;
+		info.tagSize      = sizeof ( DT );
+		info.pTag         = &data;
+
+		vkSetDebugUtilsObjectTagEXT ( device.getHandle (), &info );
+	}
+
+	void insertLabel ( VkQueue queue, const char * text, const glm::vec4& color = glm::vec4 ( 1.0f ) )
+	{
+		VkDebugUtilsLabelEXT	info = {};
+
+		info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+		info.pLabelName = text;
+		info.color [0]  = color [0];
+		info.color [1]  = color [1];
+		info.color [2]  = color [2];
+		info.color [3]  = color [3];
+
+		vkQueueInsertDebugUtilsLabelEXT ( queue, &info );
+	}
+
+	void insertLabel ( CommandBuffer& where, const char * text, const glm::vec4& color = glm::vec4 ( 1.0f ) )
+	{
+		VkDebugUtilsLabelEXT	info = {};
+
+		info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+		info.pLabelName = text;
+		info.color [0]  = color [0];
+		info.color [1]  = color [1];
+		info.color [2]  = color [2];
+		info.color [3]  = color [3];
+
+		vkCmdInsertDebugUtilsLabelEXT ( where.getHandle (), &info);
+	}
+
+	class   Label
+	{
+		VkQueue			queue = VK_NULL_HANDLE;
+		VkCommandBuffer	cb    = VK_NULL_HANDLE;
+	public:
+		Label ( VkQueue where, const char * text, const glm::vec4& color = glm::vec4 ( 1.0f ) )
+		{
+			VkDebugUtilsLabelEXT	info = {};
+
+			queue           = where;
+			info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+			info.pLabelName = text;
+			info.color [0]  = color [0];
+			info.color [1]  = color [1];
+			info.color [2]  = color [2];
+			info.color [3]  = color [3];
+
+			vkQueueBeginDebugUtilsLabelEXT ( queue, &info );
+		}
+
+		Label ( const CommandBuffer& where, const char * text, const glm::vec4& color = glm::vec4 ( 1.0f ) )
+		{
+			VkDebugUtilsLabelEXT	info = {};
+
+			cb              = where.getHandle ();
+			info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+			info.pLabelName = text;
+			info.color [0]  = color [0];
+			info.color [1]  = color [1];
+			info.color [2]  = color [2];
+			info.color [3]  = color [3];
+
+			vkCmdBeginDebugUtilsLabelEXT ( where.getHandle (), &info );
+		}
+
+		~Label ()
+		{
+			if ( queue )
+				vkQueueEndDebugUtilsLabelEXT ( queue );
+			else
+				vkCmdEndDebugUtilsLabelEXT ( cb );
+		}
+	};
 };
 
-		// return normal matrix for a given model-view
+			// return normal matrix for a given model-view
 inline glm::mat4 normalMatrix ( const glm::mat4& modelView ) 
 {
 	return glm::inverseTranspose ( modelView );

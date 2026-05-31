@@ -19,6 +19,7 @@ class	SwapChain
 	VkSwapchainKHR				swapChain       = VK_NULL_HANDLE;
 	bool						useSrgb         = false;
 	bool						vSync           = true;
+	uint32_t					imageCount      = 0;
 	std::vector<VkImage>		swapChainImages;
 	std::vector<VkImageView> 	swapChainImageViews;
 	std::vector<VkFramebuffer>	swapChainFramebuffers;
@@ -35,8 +36,16 @@ class	SwapChain
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_SWAPCHAIN_KHR
+	};
+
 	SwapChain  ( bool _vsync = true ) : vSync ( _vsync ) {}
-	~SwapChain () = default;
+	~SwapChain()
+	{
+		clean ();
+	}
 
 	VkFormat	getFormat () const
 	{
@@ -58,9 +67,10 @@ public:
 		return swapChainExtent.height;
 	}
 
-	uint32_t	imageCount () const
+	uint32_t	getImageCount () const
 	{
-		return (uint32_t) swapChainImages.size ();
+		//return (uint32_t) swapChainImages.size ();
+		return imageCount;
 	}
 
 	const std::vector<VkFramebuffer>& getFramebuffers () const
@@ -88,6 +98,11 @@ public:
 		return  renderFinishedSemaphores [currentFrame].getHandle ();
 	}
 	
+	VkSemaphore	finishedSemaphore ( uint32_t index ) const
+	{
+		return  renderFinishedSemaphores [index].getHandle ();
+	}
+
 	VkFence	currentInFlightFence () const
 	{
 		return inFlightFences [currentFrame].getHandle ();
@@ -95,13 +110,20 @@ public:
 	
 	void	clean ( bool cleanSync = true )
 	{
+		if ( swapChain == VK_NULL_HANDLE ) 
+			return;
+
 		if ( cleanSync )
+		{
 			for ( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
 			{
 				imageAvailableSemaphores [i].clean ();	
-				renderFinishedSemaphores [i].clean ();
 				inFlightFences           [i].clean ();
 			}
+
+			for ( size_t i = 0; i < imageCount; i++ )
+				renderFinishedSemaphores [i].clean ();
+		}
 
 		for ( auto framebuffer : swapChainFramebuffers )
 			vkDestroyFramebuffer ( device->getDevice (), framebuffer, nullptr );
@@ -129,7 +151,8 @@ public:
 		VkSurfaceFormatKHR		surfaceFormat    = chooseSwapSurfaceFormat ( swapChainSupport.formats );
 		VkPresentModeKHR		presentMode      = chooseSwapPresentMode   ( swapChainSupport.presentModes );
 		VkExtent2D				extent           = chooseSwapExtent        ( swapChainSupport.capabilities, width, height );
-		uint32_t				imageCount       = swapChainSupport.capabilities.minImageCount + 1;
+
+		imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR ( device->getPhysicalDevice (), surface, &surfCaps );
 
@@ -182,7 +205,7 @@ public:
 		swapChainImageFormat = surfaceFormat.format;
 		swapChainExtent      = extent;
 
-		createImageViews   ();
+		createImageViews ();
 	}
 
 	void createImageViews ()
@@ -242,16 +265,18 @@ public:
 	void createSyncObjects ()
 	{
 		imageAvailableSemaphores.resize ( MAX_FRAMES_IN_FLIGHT );
-		renderFinishedSemaphores.resize ( MAX_FRAMES_IN_FLIGHT );
+		renderFinishedSemaphores.resize ( imageCount );
 		inFlightFences.          resize ( MAX_FRAMES_IN_FLIGHT );
 		imagesInFlight.          resize ( swapChainImages.size (), VK_NULL_HANDLE );
 
 		for ( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
 		{
 			imageAvailableSemaphores [i].create ( *device );
-			renderFinishedSemaphores [i].create ( *device );
 			inFlightFences           [i].create ( *device, true );
 		}
+
+		for ( size_t i = 0; i < imageCount; i++ )
+			renderFinishedSemaphores [i].create ( *device );
 	}
 
 	uint32_t	acquireNextImage ()
@@ -276,7 +301,7 @@ public:
 	{
 		VkPresentInfoKHR	presentInfo         = {};
 		VkSwapchainKHR		swapChains       [] = { swapChain };
-		VkSemaphore			signalSemaphores [] = { renderFinishedSemaphores [currentFrame].getHandle () };
+		VkSemaphore			signalSemaphores [] = { renderFinishedSemaphores [imageIndex].getHandle () };
 		
 		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;

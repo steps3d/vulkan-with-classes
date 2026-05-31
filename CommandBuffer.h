@@ -205,6 +205,11 @@ class	CommandBuffer
 	bool					hasRenderPass = false;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_COMMAND_BUFFER
+	};
+
 	CommandBuffer () = default;
 	CommandBuffer ( CommandBuffer&& cb )
 	{

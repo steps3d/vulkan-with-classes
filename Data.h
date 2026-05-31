@@ -15,25 +15,29 @@
 #include	<string>
 #include	<stdint.h>
 
-class	Data
+class	DataView
 {
-	uint8_t  * bits;
-	int		length;
-	int		pos;
+protected:
+	uint8_t   * bits   = nullptr;
+	int		    length = 0;
+	int		    pos    = 0;
 	std::string	file;						// when data loaded from file, contains it's name
 
 public:
-	explicit Data ( const std::string& fileName );
-	Data ( void * ptr, int len );
-	~Data ();
+	DataView  () {}
+	DataView  ( void * ptr, int len ) : bits ( (uint8_t *)ptr ), length ( len ) {}
+	~DataView () = default;
 
-	bool	isOk () const;
+	bool	isOk () const		// ???
+	{
+		return bits != nullptr;
+	}
 
 	const std::string&	getFileName () const
 	{
 		return file;
 	}
-	
+
 	bool	isEmpty () const
 	{
 		return pos >= length;
@@ -53,7 +57,7 @@ public:
 	{
 		if ( pos < length )
 			return bits [pos++];
-		
+
 		return -1;
 	}
 
@@ -165,17 +169,31 @@ public:
 	std::string	getString ()
 	{
 		std::string	str;
-		
+
 		if ( !getString ( str ) )
 			return "";
-		
+
 		return str;
 	}
-	
+
 	int		getBytes   ( void * ptr, int len );
 	bool	getString  ( std::string& str, char term = '\0' );		// get a string with given terminator
 	bool	saveToFile ( const char * name ) const;
 	void	dump       ( int num, int offs = 0 ) const;
+};
+
+class	Data : public DataView
+{
+public:
+	explicit Data ( const std::string& fileName );
+	Data ( void * ptr, int len ) : DataView ( ptr, len ) {}
+	~Data ();
+
+	DataView	subData ( int offset, int size )
+	{
+		return DataView ( bits + offset, size );
+	}
+
 };
 
 #endif

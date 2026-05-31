@@ -7,6 +7,11 @@ class	Semaphore
 	Device   * device  = nullptr;
 
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_SEMAPHORE
+	};
+
 	Semaphore  () = default;
 	Semaphore  ( Semaphore&& s )
 	{

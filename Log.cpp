@@ -6,6 +6,8 @@
 
 #include	<iostream>
 #include	<fstream>
+#include	<iomanip>
+#include	<ctime>
 #include	"Log.h"
 
 #ifdef	_WIN32
@@ -21,11 +23,25 @@ Log& Log::flush ()
 	if ( skip )
 		return *this;
 
+	if ( isWarning && skipWarning )
+		return *this;
+
+	if ( isInfo && skipInfo )
+		return *this;
+
+	if ( showTime )
+	{
+		auto t  = std::time(nullptr);
+		auto tm = *std::localtime(&t);
+
+		std::cout << std::put_time(&tm, "%d-%m-%Y %H-%M-%S ");
+	}
+
 	std::string	temp = s.str ();	// get string from stream
 		
 	s.str ( std::string () );		// clear stream
 	
-	puts ( temp.c_str () );
+	std::cout << temp;
 	
 	if ( !logName.empty () )
 	{
@@ -56,3 +72,14 @@ Log&	debug ()
 {
 	return debLog;
 }
+
+Log& info ()
+{
+	return appLog << Log::info__ ();
+}
+
+Log& warning ()
+{
+	return appLog << Log::warning__ ();
+}
+

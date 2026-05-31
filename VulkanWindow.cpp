@@ -6,6 +6,18 @@
 
 const bool enableValidationLayers = true;
 
+PFN_vkDebugUtilsMessengerCallbackEXT	VulkanWindow::vkDebugUtilsMessengerCallbackEXT = {};
+PFN_vkCreateDebugUtilsMessengerEXT		VulkanWindow::vkCreateDebugUtilsMessengerEXT   = {};
+PFN_vkDestroyDebugUtilsMessengerEXT		VulkanWindow::vkDestroyDebugUtilsMessengerEXT  = {};
+PFN_vkSetDebugUtilsObjectNameEXT		VulkanWindow::vkSetDebugUtilsObjectNameEXT     = {};
+PFN_vkSetDebugUtilsObjectTagEXT			VulkanWindow::vkSetDebugUtilsObjectTagEXT      = {};
+PFN_vkQueueBeginDebugUtilsLabelEXT		VulkanWindow::vkQueueBeginDebugUtilsLabelEXT   = {};
+PFN_vkQueueEndDebugUtilsLabelEXT		VulkanWindow::vkQueueEndDebugUtilsLabelEXT     = {};
+PFN_vkCmdBeginDebugUtilsLabelEXT		VulkanWindow::vkCmdBeginDebugUtilsLabelEXT     = {};
+PFN_vkCmdEndDebugUtilsLabelEXT			VulkanWindow::vkCmdEndDebugUtilsLabelEXT       = {};
+PFN_vkQueueInsertDebugUtilsLabelEXT		VulkanWindow::vkQueueInsertDebugUtilsLabelEXT  = {};
+PFN_vkCmdInsertDebugUtilsLabelEXT		VulkanWindow::vkCmdInsertDebugUtilsLabelEXT    = {};
+
 	// GLFW callbacks
 static void _key ( GLFWwindow * window, int key, int scanCode, int action, int mods )
 {
@@ -141,7 +153,7 @@ void	VulkanWindow::recreateSwapChain ()
 	}
 
 			// wait till can do anything
-	vkDeviceWaitIdle( device.getDevice () );
+	vkDeviceWaitIdle ( device.getDevice () );
 
 			// clean and recreate swap chain
 	cleanupSwapChain ();
@@ -430,14 +442,15 @@ bool	VulkanWindow::makeScreenshot ( const std::string& fileName )
 
 void	VulkanWindow::defaultSubmit ( CommandBuffer& cb )
 {
-	VkFence					currentFence        = swapChain.currentInFlightFence ();
+	VkFence		currentFence = swapChain.currentInFlightFence ();
 
-	vkResetFences ( device.getDevice (), 1, &currentFence );
+	//vkWaitForFences ( device.getDevice (), 1, &currentFence );
+	vkResetFences   ( device.getDevice (), 1, &currentFence );
 
 	SubmitInfo ()
 		.wait    ( { { swapChain.currentAvailableSemaphore (), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT } } )
 		.buffers ( { cb } )
-		.signal  ( { swapChain.currentRenderFinishedSemaphore () } )
+		.signal  ( { swapChain.finishedSemaphore ( currentImage ) } )
 		.submit  ( device.getGraphicsQueue (), swapChain.currentInFlightFence () );
 }
 
@@ -478,20 +491,31 @@ void	VulkanWindow::idle ()
 
  VkResult VulkanWindow::createDebugUtilsMessengerEXT ( VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger )
 {
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		// check whether we've loaded all debug funcs
+	if ( !vkCreateDebugUtilsMessengerEXT )
+	{
+		vkDebugUtilsMessengerCallbackEXT = (PFN_vkDebugUtilsMessengerCallbackEXT) vkGetInstanceProcAddr ( instance, "vkDebugUtilsMessengerCallbackEXT" );
+		vkCreateDebugUtilsMessengerEXT   = (PFN_vkCreateDebugUtilsMessengerEXT)   vkGetInstanceProcAddr ( instance, "vkCreateDebugUtilsMessengerEXT"   );
+		vkDestroyDebugUtilsMessengerEXT  = (PFN_vkDestroyDebugUtilsMessengerEXT)  vkGetInstanceProcAddr ( instance, "vkDestroyDebugUtilsMessengerEXT"  );
+		vkSetDebugUtilsObjectNameEXT     = (PFN_vkSetDebugUtilsObjectNameEXT)     vkGetInstanceProcAddr ( instance, "vkSetDebugUtilsObjectNameEXT"     );
+		vkSetDebugUtilsObjectTagEXT      = (PFN_vkSetDebugUtilsObjectTagEXT)      vkGetInstanceProcAddr ( instance, "vkSetDebugUtilsObjectTagEXT"      );
+		vkQueueBeginDebugUtilsLabelEXT   = (PFN_vkQueueBeginDebugUtilsLabelEXT)   vkGetInstanceProcAddr ( instance, "vkQueueBeginDebugUtilsLabelEXT"   ); 
+		vkQueueEndDebugUtilsLabelEXT     = (PFN_vkQueueEndDebugUtilsLabelEXT)     vkGetInstanceProcAddr ( instance, "vkQueueEndDebugUtilsLabelEXT"     );
+		vkCmdBeginDebugUtilsLabelEXT     = (PFN_vkCmdBeginDebugUtilsLabelEXT)     vkGetInstanceProcAddr ( instance, "vkCmdBeginDebugUtilsLabelEXT"     );
+		vkCmdEndDebugUtilsLabelEXT       = (PFN_vkCmdEndDebugUtilsLabelEXT)       vkGetInstanceProcAddr ( instance, "vkCmdEndDebugUtilsLabelEXT"       );
+		vkQueueInsertDebugUtilsLabelEXT  = (PFN_vkQueueInsertDebugUtilsLabelEXT)  vkGetInstanceProcAddr ( instance, "vkQueueInsertDebugUtilsLabelEXT"  );
+		vkCmdInsertDebugUtilsLabelEXT    = (PFN_vkCmdInsertDebugUtilsLabelEXT)    vkGetInstanceProcAddr ( instance, "vkCmdInsertDebugUtilsLabelEXT"    );
+	}
 
-	if ( func != nullptr )
-		return func ( instance, pCreateInfo, pAllocator, pDebugMessenger );
+	if ( vkCreateDebugUtilsMessengerEXT != nullptr )
+		return vkCreateDebugUtilsMessengerEXT ( instance, pCreateInfo, pAllocator, pDebugMessenger );
 
 	return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
 void VulkanWindow::destroyDebugUtilsMessengerEXT ( VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator )
 {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-
-	if ( func != nullptr )
-		func ( instance, debugMessenger, pAllocator );
+	vkDestroyDebugUtilsMessengerEXT ( instance, debugMessenger, pAllocator );
 }
 
 void	VulkanWindow::populateDebugMessengerCreateInfo ( VkDebugUtilsMessengerCreateInfoEXT& createInfo )
@@ -502,4 +526,49 @@ void	VulkanWindow::populateDebugMessengerCreateInfo ( VkDebugUtilsMessengerCreat
 	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	createInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	createInfo.pfnUserCallback = debugCallback;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanWindow::debugCallback ( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData )
+{
+	if ( messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )		// display only warning or higher
+	{
+		if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT )
+			log () << "VERBOSE : ";
+		else if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
+			log () <<  "INFO : ";
+		else if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )
+			log () << "WARNING : ";
+		else if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
+			log () << "ERROR : ";
+	
+		log () << "validation layer: " << pCallbackData->pMessage << Log::endl;
+
+		if ( pCallbackData -> objectCount > 0 )
+		{
+			log () << "Objects - " << std::endl;
+
+			for ( uint32_t object = 0; object < pCallbackData -> objectCount; ++object )
+			{
+				const char * name = pCallbackData->pObjects[object].pObjectName;
+
+				log () << " Object[" << object << "] - Type " << pCallbackData->pObjects[object].objectType << 
+						  " Value " << (void *)pCallbackData->pObjects[object].objectHandle << 
+						  " Name \"" << (name ? name : "") << "\'\n" << std::endl;
+			}
+		}
+
+		if ( pCallbackData->cmdBufLabelCount > 0 )
+		{
+			log () << "\n Command Buffer Labels -" << std::endl;
+
+			for ( uint32_t label = 0; label < pCallbackData->cmdBufLabelCount; ++label )
+			{
+				const char * name = pCallbackData->pCmdBufLabels[label].pLabelName;
+
+				log () << " Label[" << label << "d] - " << (name ? name : "") << std::endl;
+			}
+		}
+	}
+
+	return VK_FALSE;
 }

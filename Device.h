@@ -71,6 +71,11 @@ class	Device
 	friend class VulkanWindow;
 	
 public:
+	enum
+	{
+		type_id = VK_OBJECT_TYPE_DEVICE
+	};
+
 	Device  () {}
 	Device ( const Device& ) = delete;
 	Device ( Device&& dev )

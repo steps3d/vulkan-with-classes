@@ -88,7 +88,7 @@ if (WIN32)
 		#set ( ASSIMP_LIB_PATH "${ASSIMP_DIR}/lib/Debug" )
 	endif ()
 
-	include_directories ( ${GLM} ${GLI} ${GLFW}/include ${ASSIMP_DIR}/include "${Vulkan_INCLUDE_DIRS}" "ext" "ext/tinygltf" )
+	include_directories ( ${GLM} ${GLI} ${GLFW}/include ${ASSIMP_DIR}/include "${Vulkan_INCLUDE_DIRS}" "${Vulkan_INCLUDE_DIRS}/Volk" "ext" "ext/tinygltf" )
 	link_directories    ( ${GLFW_LIB_PATH} ${ASSIMP_LIB_PATH} ${ZLIB_PATH} ) 
 	
 	 add_definitions( -D_CRT_SECURE_NO_WARNINGS )
@@ -96,7 +96,7 @@ else ()
 	set ( GLFW_LIB 		glfw )
 	set ( ASSIMP_LIB	assimp )
 	set ( GLI           "ext/gli"  )
-	include_directories ( "${Vulkan_INCLUDE_DIRS}" "ext" "${GLI}")
+	include_directories ( "${Vulkan_INCLUDE_DIRS}" "${Vulkan_INCLUDE_DIRS}/Volk" "ext" "${GLI}")
 
 endif ()
 
@@ -174,4 +174,7 @@ target_link_libraries ( example-deferred-dynamic-rendering ${GLFW_LIB} "${Vulkan
 
 add_executable ( example-reversed-z example-reversed-z.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
 target_link_libraries ( example-reversed-z ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
+
+add_executable ( example-shader-object example-shader-object.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
+target_link_libraries ( example-shader-object ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
 
