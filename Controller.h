@@ -43,6 +43,7 @@ class	RotateController : public Controller
 public:
 	RotateController  ( VulkanWindow * ptr ) : Controller ( ptr ) {}
 	RotateController  ( VulkanWindow * ptr, const glm::vec3& e ) : Controller ( ptr ), eye ( e ) {}
+	RotateController  ( VulkanWindow * ptr, const glm::vec3& e, float zf ) : Controller ( ptr ), eye ( e ), zFar ( zf ) {}
 	~RotateController () {}
 
 	void	setDepthRange ( float n = 0.01f, float f = 200.0f )

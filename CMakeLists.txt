@@ -178,3 +178,6 @@ target_link_libraries ( example-reversed-z ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASS
 add_executable ( example-shader-object example-shader-object.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
 target_link_libraries ( example-shader-object ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
 
+add_executable ( example-descriptor-heap example-descriptor-heap.cpp VulkanWindow.cpp Log.cpp Data.cpp DescriptorSet.cpp Device.cpp Texture.cpp Dds.cpp Mesh.cpp bbox.cpp plane.cpp Camera.cpp sphere.cpp ray.cpp CommandBuffer.cpp )
+target_link_libraries ( example-descriptor-heap ${GLFW_LIB} "${Vulkan_LIBRARY}" ${ASSIMP_LIB} )
+

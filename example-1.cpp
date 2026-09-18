@@ -75,7 +75,7 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
 		for ( auto& desc : descriptorSets )
 			desc.setLayout ( device, descAllocator, pipeline.getDescLayout () ).create ();

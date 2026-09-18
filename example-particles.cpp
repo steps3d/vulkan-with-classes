@@ -63,9 +63,9 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 			descriptorSets  [i]
 				.setLayout        ( device, descAllocator, graphicsPipeline.getDescLayout () )
 				.addUniformBuffer ( 0, uniformBuffers [i], 0, sizeof ( Ubo ) )
@@ -82,9 +82,9 @@ public:
 	{
 		VkDeviceSize bufferSize = sizeof ( Ubo );
 
-		uniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize ( swapChain.getImageCount() );
 
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
 
 			// current app code
@@ -120,7 +120,7 @@ public:
 		createCommandBuffers       ( renderPass );
 		createComputeCommandBuffer ();
 		
-		fences.resize ( swapChain.imageCount () );
+		fences.resize ( swapChain.getImageCount () );
 
 		for ( auto& f : fences )
 			f.create ( device );
@@ -128,7 +128,7 @@ public:
 
 	virtual	void	freePipelines () override
 	{
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].clean ();
 
 		commandBuffers.clear   ();

@@ -21,16 +21,16 @@ public:
 			vkDestroyShaderEXT ( device, shader, nullptr );
 	}
 
-	bool	create ( Device& dev, Data& data, VkShaderStageFlagBits stage, DescSetLayout * layout = nullptr, const std::string& name = "main" )
+	bool	create ( Device& dev, Data& data, VkShaderStageFlagBits stage, 
+					 DescSetLayout * layout = nullptr, const std::string& name = "main" )
 	{
 		VkShaderCreateInfoEXT shaderCreateInfo {};
-		VkDescriptorSetLayout	descSetLayout = layout -> getHandle ();
+		VkDescriptorSetLayout	descSetLayout  {};
 
 		device                     = dev.getDevice ();
 		shaderCreateInfo.sType     = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
 		shaderCreateInfo.flags     = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
 		shaderCreateInfo.stage     = stage;
-		//shaderCreateInfo.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		shaderCreateInfo.codeType  = VK_SHADER_CODE_TYPE_BINARY_EXT;
 		shaderCreateInfo.pCode     = reinterpret_cast<const uint32_t*>( data.getPtr () );
 		shaderCreateInfo.codeSize  = data.getLength ();
@@ -38,6 +38,8 @@ public:
 
 		if ( layout != nullptr )
 		{
+			descSetLayout = layout -> getHandle ();
+
 			shaderCreateInfo.setLayoutCount = 1;
 			shaderCreateInfo.pSetLayouts    = &descSetLayout;
 		}
@@ -69,8 +71,6 @@ class	ShaderObjectWindow : public VulkanWindow
 	std::vector<Uniform<Ubo>>		uniformBuffers;
 	DescSetLayout					descSetLayout;
 	VkPipelineLayout				pipelineLayout = VK_NULL_HANDLE;
-	//ShaderObject					vertexShader;
-	//ShaderObject					fragmentShader;
 	VkShaderEXT						vertexShader   {};
 	VkShaderEXT						fragmentShader {};
 
@@ -88,7 +88,8 @@ class	ShaderObjectWindow : public VulkanWindow
 	PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR   { VK_NULL_HANDLE };
 	PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR       { VK_NULL_HANDLE };
 
-		// With VK_EXT_shader_object pipeline state must be set at command buffer creation using these functions
+		// With VK_EXT_shader_object pipeline state must be set at 
+		// command buffer creation using these functions
 	PFN_vkCmdSetAlphaToCoverageEnableEXT   vkCmdSetAlphaToCoverageEnableEXT   { VK_NULL_HANDLE };
 	PFN_vkCmdSetColorBlendEnableEXT        vkCmdSetColorBlendEnableEXT        { VK_NULL_HANDLE };
 	PFN_vkCmdSetColorWriteMaskEXT          vkCmdSetColorWriteMaskEXT          { VK_NULL_HANDLE };
@@ -113,7 +114,8 @@ class	ShaderObjectWindow : public VulkanWindow
 
 
 public:
-	ShaderObjectWindow ( int w, int h, const std::string& t, DevicePolicy * p ) : VulkanWindow ( w, h, t, true, p )
+	ShaderObjectWindow ( int w, int h, const std::string& t, DevicePolicy * p ) : 
+				VulkanWindow ( w, h, t, true, p )
 	{
 		loadExtensions ();
 		setController  ( new RotateController ( this, glm::vec3(2.0f, 2.0f, 2.0f) ) );
@@ -128,17 +130,19 @@ public:
 			.add    ( 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT )
 			.create ( device.getDevice () );
 
-		vertexShader   = createShader ( Data ( "shaders/shader-tex.vert.spv" ), VK_SHADER_STAGE_VERTEX_BIT,   &descSetLayout );
-		fragmentShader = createShader ( Data ( "shaders/shader-tex.frag.spv" ), VK_SHADER_STAGE_FRAGMENT_BIT, &descSetLayout );
+		vertexShader   = createShader ( Data ( "shaders/shader-tex.vert.spv" ), 
+											VK_SHADER_STAGE_VERTEX_BIT,   &descSetLayout );
+		fragmentShader = createShader ( Data ( "shaders/shader-tex.frag.spv" ), 
+											VK_SHADER_STAGE_FRAGMENT_BIT, &descSetLayout );
 
 		createPipelines ();
 	}
 
 	void	createUniformBuffers ()
 	{
-		uniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize ( swapChain.getImageCount() );
 		
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
 	}
 
@@ -149,9 +153,9 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			descriptorSets  [i]
 				.setLayout        ( device, descAllocator, descSetLayout )
@@ -193,9 +197,9 @@ public:
 
 	void	createCommandBuffers ()
 	{
-		commandBuffers = device.allocCommandBuffers ( swapChain.imageCount () );
+		commandBuffers = device.allocCommandBuffers ( swapChain.getImageCount () );
 
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			VkRenderingAttachmentInfoKHR colorAttachment        = {};
 			VkRenderingAttachmentInfoKHR depthStencilAttachment = {};
@@ -224,10 +228,9 @@ public:
 			renderingInfo.pDepthAttachment     = &depthStencilAttachment;
 			renderingInfo.pStencilAttachment   = &depthStencilAttachment;
 
-			// With dynamic rendering there are no subpass dependencies, 
-			// we need to take care of proper layout transitions by using barriers
-			// for color and depth images
-
+				// With dynamic rendering there are no subpass dependencies, 
+				// we need to take care of proper layout transitions by using barriers
+				// for color and depth images
 			auto	barrierImage = imageBarrier  ( swapChain.getImages () [i], 
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,		// srcStageMask
 				0,													// srcAccessMask
@@ -239,13 +242,13 @@ public:
 			);
 
 			auto	barrierDepth = imageBarrier  ( depthTexture.getImage (),   
-				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,		// srcStageMask, 
-				0,																							// srcAccessMask, 
-				VK_IMAGE_LAYOUT_UNDEFINED,																	// oldLayout, 
-				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,		// dstStageMask, 
-				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,												// dstAccessMask, 
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,											// newLayout, 
-				VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT										// aspectMask
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,	// srcStageMask, 
+				0,																						// srcAccessMask, 
+				VK_IMAGE_LAYOUT_UNDEFINED,																// oldLayout, 
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,	// dstStageMask, 
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,											// dstAccessMask, 
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,										// newLayout, 
+				VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT									// aspectMask
 			);
 
 
@@ -257,13 +260,11 @@ public:
 
 			vkCmdBeginRenderingKHR ( cmd, &renderingInfo );
 
-			////////////
 			VkViewport viewport = { 0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f };
 			VkRect2D   scissor  = { 0, 0, width, height };
 
-			// No more pipelines required, everything is bound at command buffer level
-			// This also means that we need to explicitly set a lot of the state to be spec compliant
-
+				// No more pipelines required, everything is bound at command buffer level
+				// This also means that we need to explicitly set a lot of the state to be spec compliant
 			vkCmdSetViewportWithCountEXT       ( cmd, 1, &viewport );
 			vkCmdSetScissorWithCountEXT        ( cmd, 1, &scissor );
 			vkCmdSetCullModeEXT                ( cmd, VK_CULL_MODE_BACK_BIT );
@@ -301,11 +302,14 @@ public:
 
 			std::vector<VkVertexInputAttributeDescription2EXT> vertexAttributes = 
 			{
-				{ VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(BasicVertex, pos) },
-				{ VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 1, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(BasicVertex, tex) }
+				{ VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, 
+						VK_FORMAT_R32G32B32_SFLOAT, offsetof(BasicVertex, pos) },
+				{ VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 1, 0, 
+						VK_FORMAT_R32G32_SFLOAT,    offsetof(BasicVertex, tex) }
 			};
 
-			vkCmdSetVertexInputEXT  ( cmd, 1, &vertexInputBinding, uint32_t ( vertexAttributes.size () ), vertexAttributes.data () );
+			vkCmdSetVertexInputEXT  ( cmd, 1, &vertexInputBinding, uint32_t ( vertexAttributes.size () ), 
+										vertexAttributes.data () );
 
 				// Create pipeline layout and bind it to command buffer
 			VkPipelineLayoutCreateInfo			pipelineLayoutInfo = {};
@@ -355,7 +359,8 @@ public:
 		uniformBuffers [currentImage]->proj  = controller->getProjection ();
 	}
 
-	VkShaderEXT	createShader ( Data& data, VkShaderStageFlagBits stage, DescSetLayout * layout = nullptr, const std::string& name = "main" )
+	VkShaderEXT	createShader ( Data& data, VkShaderStageFlagBits stage, DescSetLayout * layout = nullptr, 
+								const std::string& name = "main" )
 	{
 		VkShaderCreateInfoEXT	shaderCreateInfo {};
 		VkDescriptorSetLayout	descSetLayout = layout ? layout -> getHandle () : VK_NULL_HANDLE;
@@ -389,8 +394,8 @@ public:
 		vkCmdBindShadersEXT      = reinterpret_cast<PFN_vkCmdBindShadersEXT>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdBindShadersEXT"));
 		vkGetShaderBinaryDataEXT = reinterpret_cast<PFN_vkGetShaderBinaryDataEXT>(vkGetDeviceProcAddr(device.getDevice (), "vkGetShaderBinaryDataEXT"));
 
-		vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdBeginRenderingKHR"));
-		vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdEndRenderingKHR"));
+		vkCmdBeginRenderingKHR   = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdBeginRenderingKHR"));
+		vkCmdEndRenderingKHR     = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdEndRenderingKHR"));
 
 		vkCmdSetAlphaToCoverageEnableEXT   = reinterpret_cast<PFN_vkCmdSetAlphaToCoverageEnableEXT>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdSetAlphaToCoverageEnableEXT"));
 		vkCmdSetColorBlendEnableEXT        = reinterpret_cast<PFN_vkCmdSetColorBlendEnableEXT>(vkGetDeviceProcAddr(device.getDevice (), "vkCmdSetColorBlendEnableEXT"));
@@ -429,7 +434,6 @@ int main ( int argc, const char * argv [] )
 	policy.addDeviceExtension ( VK_KHR_MULTIVIEW_EXTENSION_NAME                        );
 	policy.addDeviceExtension ( VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME              );
 	policy.addDeviceExtension ( VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME            );
-	//policy.addDeviceExtension ( VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME );
 
 	policy.addFeatures ( &enabledShaderObjectFeaturesEXT );
 

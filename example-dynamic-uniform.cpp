@@ -50,9 +50,9 @@ public:
 		auto	align = device.getProperties ().properties.limits.minUniformBufferOffsetAlignment;
 
 		size = align * ( (size + align - 1) / align );
-		uniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize ( swapChain.getImageCount() );
 		
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 64, int ( align ) );			// each buffer for 64 Ubo structs
 	}
 
@@ -63,9 +63,9 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			descriptorSets  [i]
 				.setLayout        ( device, descAllocator, pipeline.getDescLayout () )

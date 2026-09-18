@@ -72,8 +72,8 @@ bool	Device :: create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, 
 	createInfo.pQueueCreateInfos       = &queueCreateInfo;
 	createInfo.queueCreateInfoCount    = 1;
 	//createInfo.pEnabledFeatures        = &features;
-	createInfo.enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size());
-	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	createInfo.enabledExtensionCount   = static_cast<uint32_t> ( deviceExtensions.size () );
+	createInfo.ppEnabledExtensionNames = deviceExtensions.data ();
 	createInfo.enabledLayerCount       = 0;
 	createInfo.pNext                   = pNextFeatures;
 
@@ -81,11 +81,11 @@ bool	Device :: create ( VkInstance _instance, VkPhysicalDevice _physicalDebice, 
 		fatal () << "VulknaWindow: failed to create logical device!";
 
 	vkGetDeviceQueue ( device, families.graphicsFamily, 0, &graphicsQueue );
-	vkGetDeviceQueue ( device, families.presentFamily, 0, &presentQueue  );
-	vkGetDeviceQueue ( device, families.computeFamily, 0, &computeQueue  );
+	vkGetDeviceQueue ( device, families.presentFamily,  0, &presentQueue  );
+	vkGetDeviceQueue ( device, families.computeFamily,  0, &computeQueue  );
 
 		// create command pool
-	VkCommandPoolCreateInfo	poolInfo           = {};
+	VkCommandPoolCreateInfo	poolInfo = {};
 
 	poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = families.graphicsFamily;

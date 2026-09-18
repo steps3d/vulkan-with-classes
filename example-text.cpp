@@ -270,9 +270,9 @@ public:
 
 	void	createUniformBuffers ()
 	{
-		uniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize ( swapChain.getImageCount() );
 		
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device, sizeof ( UniformBufferObject ), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 	}
 
@@ -283,9 +283,9 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			descriptorSets  [i]
 				.setLayout        ( device, descAllocator, pipeline.getDescLayout () )

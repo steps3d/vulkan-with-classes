@@ -217,7 +217,7 @@ public:
 
 	void	createCommandBuffers ( Renderpass& renderPass )
 	{
-		auto	framebuffers = swapChain.getFramebuffers ();
+		auto&	framebuffers = swapChain.getFramebuffers ();
 
 		commandBuffers = device.allocCommandBuffers ( (uint32_t)framebuffers.size ());
 

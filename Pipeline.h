@@ -423,11 +423,6 @@ public:
 			layoutInfo.pNext = &setLayoutBindingFlags;
 		}
 
-		////////////
-		for ( auto& it : descr)
-			assert(it.descriptorCount > 0);
-
-		///////////
 		layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = count ();
 		layoutInfo.pBindings    = data  ();
@@ -551,8 +546,8 @@ class	GraphicsPipeline
 	AttrDescription								vertexAttrs;
 	std::vector<DescSetLayout>					descLayouts;
 	std::vector<VkPushConstantRange>			pushConsts;
-	void									  * pNext = nullptr;		// additional info for creating
-
+	void									  * pNext           = nullptr;		// additional info for creating
+	void                                                                      * shaderStageNext = nullptr;
 	uint32_t									numColorBlendAttachments = 0;		// for dynamic rendering, when we don't have any valid renderpass
 
 public:
@@ -988,7 +983,15 @@ public:
 		return *this;
 
 	}
-	void	create ( Renderpass& renderPass, uint32_t flags = 0 )
+
+	GraphicsPipeline&	addShaderStageInfo ( void * info )
+	{
+		shaderStageNext = info;
+
+		return *this;
+	}
+
+	void	create ( Renderpass& renderPass, uint64_t flags = 0 )
 	{
 		if ( !device )
 			fatal () << "Pipeline: device is NULL" << Log::endl;
@@ -1003,11 +1006,13 @@ public:
 		vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
 		vertShaderStageInfo.module = vertShader.getHandle ();
 		vertShaderStageInfo.pName  = vertShader.getName   ();
+		vertShaderStageInfo.pNext  = shaderStageNext;
 
 		fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
 		fragShaderStageInfo.module = fragShader.getHandle ();
 		fragShaderStageInfo.pName  = fragShader.getName   ();
+		fragShaderStageInfo.pNext  = shaderStageNext;
 
 		std::vector<VkPipelineShaderStageCreateInfo>	shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
@@ -1018,6 +1023,7 @@ public:
 			geomShaderStageInfo.stage  = VK_SHADER_STAGE_GEOMETRY_BIT;
 			geomShaderStageInfo.module = geomShader.getHandle ();
 			geomShaderStageInfo.pName  = geomShader.getName   ();
+			geomShaderStageInfo.pNext  = shaderStageNext;
 
 			shaderStages.push_back ( geomShaderStageInfo );
 		}
@@ -1029,11 +1035,13 @@ public:
 			tessControlShaderStageInfo.stage  = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 			tessControlShaderStageInfo.module = tessControlShader.getHandle ();
 			tessControlShaderStageInfo.pName  = tessControlShader.getName   ();
+			tessControlShaderStageInfo.pNext  = shaderStageNext;
 
 			tessEvalShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			tessEvalShaderStageInfo.stage  = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 			tessEvalShaderStageInfo.module = tessEvalShader.getHandle ();
 			tessEvalShaderStageInfo.pName  = tessEvalShader.getName   ();
+			tessEvalShaderStageInfo.pNext  = shaderStageNext;
 
 			shaderStages.push_back ( tessControlShaderStageInfo );
 			shaderStages.push_back ( tessEvalShaderStageInfo    );
@@ -1138,27 +1146,39 @@ public:
 		colorBlending.blendConstants[2]    = 0.0f;
 		colorBlending.blendConstants[3]    = 0.0f;
 
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+		if ( (flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0 )
+		{
+			VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		
-		pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount         = 0;
+			pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			pipelineLayoutInfo.setLayoutCount         = 0;
 		
 				// now use all descLayouts for creating pipeline layout
-		std::vector<VkDescriptorSetLayout>	layouts;
+			std::vector<VkDescriptorSetLayout>	layouts;
 
-		if ( !descLayouts.empty () )
-		{
-			for ( auto& d : descLayouts )
+			if ( !descLayouts.empty () )
 			{
-					// create descriptor if not already created
-				if ( d.getHandle () == VK_NULL_HANDLE )
-					d.create ( device->getDevice () );
+				for ( auto& d : descLayouts )
+				{
+						// create descriptor if not already created
+					if ( d.getHandle () == VK_NULL_HANDLE )
+						d.create ( device->getDevice () );
 
-				layouts.push_back ( d.getHandle () );
+					layouts.push_back ( d.getHandle () );
+				}
+		
+				pipelineLayoutInfo.setLayoutCount = (uint32_t) layouts.size ();
+				pipelineLayoutInfo.pSetLayouts    = layouts.data ();
 			}
 		
-			pipelineLayoutInfo.setLayoutCount = (uint32_t) layouts.size ();
-			pipelineLayoutInfo.pSetLayouts    = layouts.data ();
+			if ( !pushConsts.empty () )
+			{
+				pipelineLayoutInfo.pushConstantRangeCount = (int32_t) pushConsts.size ();
+				pipelineLayoutInfo.pPushConstantRanges    = pushConsts.data ();
+			}
+
+			if ( vkCreatePipelineLayout ( device->getDevice (), &pipelineLayoutInfo, nullptr, &pipelineLayout ) != VK_SUCCESS )
+				fatal () << "Pipeline: failed to create pipeline layout!" << std::endl;
 		}
 		
 		if ( !pushConsts.empty () )
@@ -1197,7 +1217,7 @@ public:
 		pipelineInfo.renderPass          = renderPass.getHandle ();
 		pipelineInfo.subpass             = 0;
 		pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
-		pipelineInfo.flags               = flags;
+		pipelineInfo.flags               = uint32_t ( flags );	// use hi-order bits in ifs
 		pipelineInfo.pNext               = pNext;
 
 		if ( patchSize > 0 )

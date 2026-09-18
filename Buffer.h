@@ -1,6 +1,7 @@
 #pragma once
 
 #include	<cstring>
+#include	<iostream>
 #include	"Device.h"
 #include	"SingleTimeCommand.h"
 
@@ -233,8 +234,10 @@ public:
 		buffer = VK_NULL_HANDLE;
 	}
 
-	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable )
+	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable, VkDeviceSize alignment = 0 )
 	{
+		assert ( buffer == VK_NULL_HANDLE );
+
 		VkBufferCreateInfo		bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 
 		bufferInfo.size        = sz;
@@ -254,6 +257,12 @@ public:
 		if ( mappable & hostWrite )
 			allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
+		if ( alignment )
+		{
+			if ( vmaCreateBufferWithAlignment ( device->getAllocator (), &bufferInfo, &allocInfo, alignment, &buffer, &allocation, nullptr ) != VK_SUCCESS )
+				fatal () << "Buffer: failed to create buffer" << std::endl;
+		}
+		else
 		if ( vmaCreateBuffer ( device->getAllocator (), &bufferInfo, &allocInfo, &buffer, &allocation, nullptr ) != VK_SUCCESS )
 			fatal () << "Buffer: failed to create buffer" << std::endl;
 #else
@@ -364,9 +373,9 @@ public:
 		ptr = nullptr;
 	}
 
-	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable )
+	bool	create ( Device& dev, VkDeviceSize sz, VkBufferUsageFlags usage, int mappable, VkDeviceSize alignment = 0 )
 	{
-		if ( !Buffer::create ( dev, sz, usage, mappable ) )
+		if ( !Buffer::create ( dev, sz, usage, mappable, alignment ) )
 			return false;
 
 #ifdef USE_VMA

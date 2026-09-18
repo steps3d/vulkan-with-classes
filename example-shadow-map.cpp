@@ -70,13 +70,13 @@ public:
 
 	void	createUniformBuffers ()
 	{
-		uniformBuffers.resize       ( swapChain.imageCount() );
-		shadowUniformBuffers.resize ( swapChain.imageCount() );
+		uniformBuffers.resize       ( swapChain.getImageCount() );
+		shadowUniformBuffers.resize ( swapChain.getImageCount() );
 
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			uniformBuffers [i].create ( device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
 
-		for ( size_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( size_t i = 0; i < swapChain.getImageCount (); i++ )
 			shadowUniformBuffers [i].create ( device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
 	}
 
@@ -88,10 +88,10 @@ public:
 
 	void	createDescriptorSets ()
 	{
-		descriptorSets.resize ( swapChain.imageCount () );
+		descriptorSets.resize ( swapChain.getImageCount () );
 
 			// create descriptors for last pass
-		for ( uint32_t i = 0; i < swapChain.imageCount (); i++ )
+		for ( uint32_t i = 0; i < swapChain.getImageCount (); i++ )
 		{
 			descriptorSets  [i]
 				.setLayout ( device, descAllocator, pipeline.getDescLayout () )
